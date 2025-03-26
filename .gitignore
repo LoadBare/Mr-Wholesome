@@ -1,9 +1,6 @@
 node_modules
 .env.development
 .env.production
-v2-migration-files
 .wakatime-project
-tsconfig.tsbuildinfo
 package-lock.json
-*.sqlite
 .TODO
