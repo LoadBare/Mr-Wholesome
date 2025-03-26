@@ -1,20 +1,15 @@
 import { commaListsAnd } from "common-tags";
-import Cron from "croner";
+import { Cron } from "croner";
 import { GuildMember, TextChannel } from "discord.js";
-import { lastBirthdayCheck } from "./api.js";
 import { ChannelIDs, RoleIDs, UserIDs, akialytesGuild, database } from "./config.js";
 import { formatDate, styleLog } from "./utilities.js";
 
 export default class Scheduler {
   start() {
-    Cron('0 0 0 * * *', () => this.birthdayScheduler()); // At 12:00 AM
+    new Cron('0 0 0 * * *', () => this.birthdayScheduler()); // At 12:00 AM
   }
 
   private async birthdayScheduler() {
-    const date = new Date().getUTCDate();
-    const lastCheckDate = await lastBirthdayCheck.get();
-    if (lastCheckDate === date) return;
-
     await this.postBirthdayMessage();
     await this.updateBirthdayRole();
   }
@@ -46,7 +41,6 @@ export default class Scheduler {
     const birthdayChannel = akialytesGuild.channels.cache.get(ChannelIDs.Birthday);
     if (!(birthdayChannel instanceof TextChannel)) return styleLog('Error fetching birthday channel from cache!', false, 'scheduler.js');
     await birthdayChannel.send(birthdayMessage);
-    await lastBirthdayCheck.set(new Date().getUTCDate());
   }
 
   private async updateBirthdayRole() {

@@ -1,44 +1,38 @@
-import { EmbedBuilder, GuildMember, ModalSubmitInteraction } from "discord.js";
-import { watchlistModalData } from "../../lib/api.js";
+import { EmbedBuilder, ModalSubmitInteraction, User } from "discord.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { ModalHandler } from "../handler.js";
 
 export class WatchlistModalHandler extends ModalHandler {
   private note: string;
+  private targetUser: User;
 
-  public constructor(interaction: ModalSubmitInteraction) {
+  public constructor(interaction: ModalSubmitInteraction, targetUser: User) {
     super(interaction);
     this.note = interaction.fields.getTextInputValue('note') || 'No note provided.';
+    this.targetUser = targetUser;
   }
 
   public async handle() {
-    const [, id] = this.interaction.customId.split(':');
+    await this.interaction.deferReply();
 
-    const watchlistData = await watchlistModalData.get(id);
-    if (!watchlistData) return this.handleError('Watchlist data cannot be found. Please try again.');
-    await watchlistModalData.del(id);
-
-    const member = await this.guild.members.fetch(watchlistData.userID).catch(() => null);
-    if (!member) return this.handleError(`Member of ID **${watchlistData.userID}** not found. Please try again.`);
-
-    const recorded = await this.addNoteToDatabase(member);
+    const recorded = await this.addNoteToDatabase(this.targetUser);
     if (!recorded) return this.handleError('Error occurred whilst creating note in NOTE table');
 
     const embed = new EmbedBuilder(baseEmbed)
-      .setTitle(`${member.displayName}'s Watchlist`)
-      .setDescription(`✅ Successfully added a note to **${member.displayName}**`);
+      .setTitle(`${this.targetUser.displayName}'s Watchlist`)
+      .setDescription(`✅ Successfully added a note to **${this.targetUser.displayName}**`);
 
     await this.interaction.reply({ embeds: [embed] });
   }
 
-  private async addNoteToDatabase(member: GuildMember) {
+  private async addNoteToDatabase(user: User) {
     const result = await database.notes.create({
       data: {
         authorID: this.interaction.user.id,
         date: Date.now().toString(),
         guildID: this.guild.id,
         noteText: this.note,
-        watchedID: member.id
+        watchedID: user.id
       }
     });
 

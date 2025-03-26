@@ -1,7 +1,7 @@
 import { stripIndents } from "common-tags";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, TextChannel } from "discord.js";
-import { levelNotifButtonData } from "./api.js";
-import { ChannelIDs, baseEmbed, database, xpCooldownCache } from "./config.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, MessageFlags, TextChannel } from "discord.js";
+import { ToggleLevelNotifButtonHandler } from "../buttons/ranking/toggle-level-notifs.js";
+import { ChannelIDs, Emotes, baseEmbed, database, xpCooldownCache } from "./config.js";
 import { getRandomIntegerFromSeed, styleLog } from "./utilities.js";
 
 export default class RankingHandler {
@@ -72,7 +72,24 @@ export default class RankingHandler {
       );
 
     const levelUpMessage = await levelUpNotifChannel.send({ content, embeds: [embed], components: [button], allowedMentions: { users: [this.message.author.id] } });
-    levelNotifButtonData.set(levelUpMessage.id, this.message.author.id, levelNotifs);
+
+    const filter = (i: ButtonInteraction) => {
+      const clickFromOwner = i.user.id === this.message.author.id;
+
+      if (!clickFromOwner) {
+        i.reply({ content: `This button is not for you ${Emotes.Bonque}`, flags: [MessageFlags.Ephemeral] });
+      }
+
+      return clickFromOwner;
+    };
+    const buttonInteraction = await levelUpMessage.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 60 * 1000 }).catch(() => { });
+
+    if (!buttonInteraction) {
+      levelUpMessage.edit({ components: [] });
+      return;
+    }
+
+    new ToggleLevelNotifButtonHandler(buttonInteraction, levelNotifs).handle();
   }
 
   // == DATABASE METHODS ==

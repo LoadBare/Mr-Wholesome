@@ -1,4 +1,4 @@
-import { Canvas, GlobalFonts, SKRSContext2D, loadImage } from "@napi-rs/canvas";
+import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from "@napi-rs/canvas";
 import { Rank } from "@prisma/client";
 import { stripIndents } from "common-tags";
 import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
@@ -108,6 +108,9 @@ export class LeaderboardCommandHandler extends CommandHandler {
     const xpTextWidth = this.canvasContext.measureText(`${memberXP} XP`).width;
     const member = this.guild.members.cache.get(rank.userID);
     const memberName = member?.displayName || 'Unknown User';
+    this.canvasContext.font = 'bold 24px ubuntu-medium, notocoloremoji';
+    this.canvasContext.strokeText(memberName, barTextX + rankTextLength + 20, barTextY + (index) * barTextSpacing, xpTextX - xpTextWidth - 50 - 10 - barTextX);
+    this.canvasContext.font = '24px ubuntu-medium, notocoloremoji';
     this.canvasContext.fillStyle = member?.roles.highest.hexColor || '#FFFFFF';
     this.canvasContext.fillText(memberName, barTextX + rankTextLength + 20, barTextY + (index) * barTextSpacing, xpTextX - xpTextWidth - 50 - 10 - barTextX);
     this.canvasContext.fillStyle = '#FFFFFF';

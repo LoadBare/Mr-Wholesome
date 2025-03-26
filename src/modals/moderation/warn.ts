@@ -1,32 +1,27 @@
 import { stripIndents } from "common-tags";
-import { ActionRowBuilder, bold, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, heading, italic, Message, ModalSubmitInteraction, User } from "discord.js";
-import { warnModalData } from "../../lib/api.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, heading, italic, Message, ModalSubmitInteraction, User } from "discord.js";
 import { baseEmbed, database, EmbedColours } from "../../lib/config.js";
 import { ModalHandler } from "../handler.js";
 
 export class WarningModalHandler extends ModalHandler {
   private reason: string;
+  private targetUser: User;
+  private notifyUser: boolean;
 
-  constructor(interaction: ModalSubmitInteraction) {
+  constructor(interaction: ModalSubmitInteraction, targetUser: User, notifyUser: boolean) {
     super(interaction);
     this.reason = interaction.fields.getTextInputValue('reason') || 'No reason provided.';
+    this.targetUser = targetUser;
+    this.notifyUser = notifyUser;
   }
 
-  async handle(): Promise<void> {
+  async handle() {
     await this.interaction.deferReply();
-    const [, id] = this.interaction.customId.split(':');
-
-    const warningData = await warnModalData.get(id);
-    if (!warningData) return this.handleError('Warning data cannot be found. Please try again.');
-    await warnModalData.del(id);
-
-    const user = await this.interaction.client.users.fetch(warningData.userID).catch(() => { });
-    if (!user) return this.handleError(`User of ID ${bold(warningData.userID)} not found. Please try again.`);
 
     const confirmationEmbed = new EmbedBuilder(baseEmbed)
-      .setTitle(`You're About To Warn ${user.displayName}`)
+      .setTitle(`You're About To Warn ${this.targetUser.displayName}`)
       .setDescription(stripIndents`
-          Doing so **${warningData.notify_user ? 'will notify' : 'will not notify'}** them, if possible.
+          Doing so **${this.notifyUser ? 'will notify' : 'will not notify'}** them, if possible.
           
           # Reason
           ${this.reason}`);
@@ -35,7 +30,7 @@ export class WarningModalHandler extends ModalHandler {
       .setComponents(
         new ButtonBuilder()
           .setCustomId('yes')
-          .setLabel(`Warn ${user.displayName}`)
+          .setLabel(`Warn ${this.targetUser.displayName}`)
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
           .setCustomId('no')
@@ -44,43 +39,45 @@ export class WarningModalHandler extends ModalHandler {
       );
 
     const message = await this.interaction.editReply({ embeds: [confirmationEmbed], components: [confirmationButtons] });
+
     const filter = (i: ButtonInteraction) => i.user.id === this.interaction.user.id;
+    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 30 * 1000 }).catch(() => { });
 
-    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 30_000 }).catch(() => { });
-
-    confirmationEmbed
-      .setTitle('Warning Cancelled')
-      .setDescription('No input detected after 30 seconds, warning has been cancelled.')
-      .setColor(EmbedColours.Negative);
     if (!confirmation) {
+      confirmationEmbed
+        .setTitle('Warning Cancelled')
+        .setDescription('No input detected after 30 seconds, warning has been cancelled.')
+        .setColor(EmbedColours.Negative);
+
       this.interaction.editReply({ embeds: [confirmationEmbed], components: [] });
       return;
     }
 
-    confirmationEmbed
-      .setDescription('Warning has been cancelled by user.')
-      .setColor(EmbedColours.Neutral);
     if (confirmation.customId === 'no') {
+      confirmationEmbed
+        .setDescription('Warning has been cancelled by user.')
+        .setColor(EmbedColours.Neutral);
+
       this.interaction.editReply({ embeds: [confirmationEmbed], components: [] });
       return;
     }
 
     let notifiedMessage: Message<false> | boolean = false;
-    if (warningData.notify_user) {
+    if (this.notifyUser) {
       const content = [
         heading(`Warned in ${this.guild.name}`),
         this.reason
       ].join('\n');
 
-      notifiedMessage = await this.messageUser(user, content, 'Yellow');
+      notifiedMessage = await this.messageUser(this.targetUser, content, 'Yellow');
     }
 
     const embedDescription = [
-      `✅ ${user.username} has been${notifiedMessage ? ' notified and' : ''} warned in the server.`,
+      `✅ ${this.targetUser.username} has been${notifiedMessage ? ' notified and' : ''} warned in the server.`,
     ];
-    if (!notifiedMessage && warningData.notify_user) embedDescription.push('', italic('⚠️ User has DMs disabled, unable to notify.'));
+    if (!notifiedMessage && this.notifyUser) embedDescription.push('', italic('⚠️ User has DMs disabled, unable to notify.'));
 
-    const recorded = await this.addWarnToDatabase(user);
+    const recorded = await this.addWarnToDatabase(this.targetUser);
     if (!recorded) embedDescription.push('', italic('⚠️ An error occurred whilst adding the warning to the database.'));
 
     const embed = new EmbedBuilder(baseEmbed)

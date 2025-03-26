@@ -1,5 +1,5 @@
-import { ActionRowBuilder, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
-import { watchlistModalData } from "../../lib/api.js";
+import { ActionRowBuilder, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
+import { WatchlistModalHandler } from "modals/moderation/watchlist.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -11,11 +11,11 @@ export class WatchlistCommandHandler extends CommandHandler {
   }
 
   private async handleAddNote() {
-    const user = this.interaction.options.getUser('user', true);
-    const displayName = this.interaction.user.displayName;
+    const targetUser = this.interaction.options.getUser('user', true);
+    const displayName = targetUser.displayName;
 
     const watchlistModal = new ModalBuilder()
-      .setCustomId(`watchlist:${this.interaction.id}`)
+      .setCustomId(this.interaction.id)
       .setTitle(`Adding a note to ${displayName}`);
 
     const noteTextInput = new TextInputBuilder()
@@ -30,7 +30,15 @@ export class WatchlistCommandHandler extends CommandHandler {
     watchlistModal.addComponents(noteActionRow);
 
     await this.interaction.showModal(watchlistModal);
-    await watchlistModalData.set(this.interaction.id, user.id);
+
+    const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 5 * 60 * 1000 }).catch(() => { });
+
+    if (!modalSubmitInteraction) {
+      return;
+    }
+
+    new WatchlistModalHandler(modalSubmitInteraction, targetUser).handle();
   }
 
   private async handleDeleteNote() {
