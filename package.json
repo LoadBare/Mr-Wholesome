@@ -13,21 +13,21 @@
     "deploy-commands": "npx tsx src/lib/deploy-commands.ts"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.53",
-    "@prisma/client": "^5.21.1",
-    "chart.js": "^4.4.5",
+    "@napi-rs/canvas": "^0.1.68",
+    "@prisma/client": "^6.5.0",
+    "chart.js": "^4.4.8",
     "common-tags": "^1.8.2",
     "croner": "^9.0.0",
     "diff": "^7.0.0",
-    "discord.js": "^14.15.3",
-    "dotenv": "^16.4.5"
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "@types/common-tags": "^1.8.4",
-    "@types/diff": "^5.2.1",
-    "@types/node": "^20.14.9",
-    "prisma": "^5.21.1",
-    "tsx": "^4.16.2",
-    "typescript": "^5.5.3"
+    "@types/diff": "^7.0.2",
+    "@types/node": "^22.13.13",
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }
