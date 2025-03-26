@@ -51,7 +51,7 @@ export class TicketPanelCommandHandler extends CommandHandler {
     await this.interaction.showModal(ticketPanelModal);
 
     const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
-    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 5 * 60 * 1000 }).catch(() => { });
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 10 * 60 * 1000 }).catch(() => { });
 
     if (!modalSubmitInteraction) {
       return;
@@ -128,11 +128,11 @@ export class TicketPanelCommandHandler extends CommandHandler {
     const message = await this.interaction.reply({ embeds: [embed], components: [confirmationButtons] });
     const filter = (i: ButtonInteraction) => i.user.id === this.interaction.user.id;
 
-    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 30_000 }).catch(() => { });
+    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 60 * 1000 }).catch(() => { });
 
     embed
       .setTitle('Deletion Cancelled')
-      .setDescription('No input detected after 30 seconds, deletion has been cancelled.')
+      .setDescription('No input detected after 60 seconds, deletion has been cancelled.')
       .setColor(EmbedColours.Negative);
     if (!confirmation) return this.interaction.editReply({ embeds: [embed], components: [] });
 

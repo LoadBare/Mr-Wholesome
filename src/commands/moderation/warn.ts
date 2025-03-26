@@ -31,7 +31,7 @@ export class WarnCommandHandler extends CommandHandler {
     await this.interaction.showModal(warnModal);
 
     const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
-    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 5 * 60 * 1000 }).catch(() => { });
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 10 * 60 * 1000 }).catch(() => { });
 
     if (!modalSubmitInteraction) {
       return;

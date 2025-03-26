@@ -41,12 +41,12 @@ export class WarningModalHandler extends ModalHandler {
     const message = await this.interaction.editReply({ embeds: [confirmationEmbed], components: [confirmationButtons] });
 
     const filter = (i: ButtonInteraction) => i.user.id === this.interaction.user.id;
-    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 30 * 1000 }).catch(() => { });
+    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 60 * 1000 }).catch(() => { });
 
     if (!confirmation) {
       confirmationEmbed
         .setTitle('Warning Cancelled')
-        .setDescription('No input detected after 30 seconds, warning has been cancelled.')
+        .setDescription('No input detected after 60 seconds, warning has been cancelled.')
         .setColor(EmbedColours.Negative);
 
       this.interaction.editReply({ embeds: [confirmationEmbed], components: [] });

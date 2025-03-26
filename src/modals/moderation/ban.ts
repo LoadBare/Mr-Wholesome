@@ -61,12 +61,12 @@ export class BanModalHandler extends ModalHandler {
     const message = await this.interaction.editReply({ embeds: [confirmationEmbed], components: [confirmationButtons] });
 
     const filter = (i: ButtonInteraction) => i.user.id === this.interaction.user.id;
-    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 30_000 }).catch(() => { });
+    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 60 * 1000 }).catch(() => { });
 
     if (!confirmation) {
       confirmationEmbed
         .setTitle('Ban Cancelled')
-        .setDescription('No input detected after 30 seconds, ban has been cancelled.')
+        .setDescription('No input detected after 60 seconds, ban has been cancelled.')
         .setColor(EmbedColours.Negative);
 
       this.interaction.editReply({ embeds: [confirmationEmbed], components: [] });

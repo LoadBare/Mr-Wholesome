@@ -33,7 +33,7 @@ export class BanCommandHandler extends CommandHandler {
     await this.interaction.showModal(banModal);
 
     const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
-    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 5 * 60 * 1000 }).catch(() => { });
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 10 * 60 * 1000 }).catch(() => { });
 
     if (!modalSubmitInteraction) {
       return;
@@ -71,7 +71,7 @@ export class ContextMenuBanCommandHandler {
     await this.interaction.showModal(banModal);
 
     const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
-    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 5 * 60 * 1000 }).catch(() => { });
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 10 * 60 * 1000 }).catch(() => { });
 
     if (!modalSubmitInteraction) {
       return;
