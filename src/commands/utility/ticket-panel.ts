@@ -1,7 +1,7 @@
 import { stripIndents } from "common-tags";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, ComponentType, EmbedBuilder, ForumChannel, MediaChannel, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
-import { TicketPanelModalHandler } from "modals/utility/ticket-panel.js";
 import { baseEmbed, database, EmbedColours } from "../../lib/config.js";
+import { TicketPanelModalHandler } from "../../modals/utility/ticket-panel.js";
 import { CommandHandler } from "../command.js";
 
 export class TicketPanelCommandHandler extends CommandHandler {
