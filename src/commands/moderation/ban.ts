@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle, User, UserContextMenuCommandInteraction } from "discord.js";
-import { BanModalHandler } from "modals/moderation/ban.js";
+import { BanModalHandler } from "../../modals/moderation/ban.js";
 import { CommandHandler } from "../command.js";
 
 export class BanCommandHandler extends CommandHandler {

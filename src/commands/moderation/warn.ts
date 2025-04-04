@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle, User } from "discord.js";
-import { WarningModalHandler } from "modals/moderation/warn.js";
+import { WarningModalHandler } from "../../modals/moderation/warn.js";
 import { CommandHandler } from "../command.js";
 
 export class WarnCommandHandler extends CommandHandler {

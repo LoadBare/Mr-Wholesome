@@ -1,6 +1,6 @@
 import { ActionRowBuilder, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
-import { WatchlistModalHandler } from "modals/moderation/watchlist.js";
 import { baseEmbed, database } from "../../lib/config.js";
+import { WatchlistModalHandler } from "../../modals/moderation/watchlist.js";
 import { CommandHandler } from "../command.js";
 
 export class WatchlistCommandHandler extends CommandHandler {
