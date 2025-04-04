@@ -13,7 +13,7 @@ COPY src ./src
 RUN npx tsc
 
 
-FROM node:lts
+FROM node:lts AS final
 
 WORKDIR /home/mr-wholesome/
 

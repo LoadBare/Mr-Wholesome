@@ -1,6 +1,5 @@
 node_modules
-.env.development
-.env.production
+.env
 .wakatime-project
 package-lock.json
 .TODO
