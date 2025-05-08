@@ -39,7 +39,7 @@ export class BanCommandHandler extends CommandHandler {
       return;
     }
 
-    new BanModalHandler(modalSubmitInteraction, this.targetUser, this.deleteMessages, this.notifyUser);
+    new BanModalHandler(modalSubmitInteraction, this.targetUser, this.deleteMessages, this.notifyUser).handle();
   }
 }
 
