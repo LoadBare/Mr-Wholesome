@@ -104,7 +104,7 @@ export default class RankingHandler {
     });
     if (!guildConfig) return styleLog('Error upserting the GUILDCONFIG table!', false, 'ranking-handler.js');
 
-    const rankedIgnoredChannelIDs = guildConfig?.rankedIgnoredChannelIDs.split(',') ?? [];
+    const rankedIgnoredChannelIDs = JSON.parse(guildConfig.rankedIgnoredChannelIDs) as Array<string>;
     return !rankedIgnoredChannelIDs.includes(this.message.channelId);
   }
 
