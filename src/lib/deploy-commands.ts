@@ -1,4 +1,4 @@
-import { ApplicationCommandType, ChannelType, ContextMenuCommandBuilder, PermissionFlagsBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { ApplicationCommandType, ChannelType, ContextMenuCommandBuilder, InteractionContextType, PermissionFlagsBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import * as dotenv from 'dotenv';
 import { styleLog } from './utilities.js';
 
@@ -365,6 +365,11 @@ const commands = [
         )
       )
     ),
+
+  new SlashCommandBuilder()
+    .setName('anonymous_feedback')
+    .setDescription('Send 100% anonymised feedback to the mods')
+    .setContexts(InteractionContextType.Guild),
 
 
   new ContextMenuCommandBuilder()

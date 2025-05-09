@@ -90,3 +90,16 @@ model MemberStats {
 
   @@id([userID, guildID])
 }
+
+model Feedback {
+  messageID    String       @id
+  hashedUserID String
+  user         FeedbackUser @relation(fields: [hashedUserID], references: [hashedUserID])
+}
+
+model FeedbackUser {
+  hashedUserID String     @id
+  warned       Boolean    @default(false)
+  blocked      Boolean    @default(false)
+  feedback     Feedback[]
+}

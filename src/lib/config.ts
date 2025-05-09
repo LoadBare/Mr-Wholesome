@@ -20,7 +20,8 @@ export const Emotes = {
   Removed: process.env.REMOVED ?? '➖',
   Ghost: process.env.GHOST ?? '👻',
   Bird: process.env.BIRD ?? '🐦',
-  Chart: process.env.CHART ?? '📊'
+  Chart: process.env.CHART ?? '📊',
+  Loading: process.env.LOADING ?? '⏳'
 };
 export const Images = {
   WatchedUser: 'https://cdn.discordapp.com/attachments/1297278175046533247/1298572168338083930/ic_fluent_person_note_24_filled.png?ex=671a0d13&is=6718bb93&hm=b494bb3f608a08225c554c78b37fe61e37fe3e116f90814ed29c7c3067f900f5&'
@@ -36,7 +37,8 @@ export const ChannelIDs = {
   BotSpam: process.env.BOT_SPAM_CHANNEL_ID ?? '',
   ModerationLogs: process.env.MODERATION_LOGS_CHANNEL_ID ?? '',
   LevelUp: process.env.LEVEL_UP_CHANNEL_ID ?? '',
-  IRLStuff: process.env.IRL_STUFF_CHANNEL_ID ?? ''
+  IRLStuff: process.env.IRL_STUFF_CHANNEL_ID ?? '',
+  AnonymousFeedback: process.env.ANONYMOUS_FEEDBACK_CHANNEL_ID ?? ''
 };
 export const RoleIDs = {
   Akialyte: process.env.AKIALYTE_ROLE_ID ?? '',
