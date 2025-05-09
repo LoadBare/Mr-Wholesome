@@ -1,6 +1,6 @@
 {
   "name": "mr-wholesome",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A general purpose Discord bot created for The Akialytes Discord server.",
   "main": "dist/index.js",
   "repository": "https://github.com/LoadXBare/Mr-Wholesome",
