@@ -26,8 +26,8 @@ export default class Scheduler {
     if (!akialyne) return styleLog('Error fetching Akialyne member!', false, 'scheduler.js');
 
     const birthdayMembersString = birthdayMembers.map((member) => {
-      if (member === akialyne) return `*definitely not ${member}'s*`;
-      else return `${member}'s`;
+      if (member === akialyne) return `*definitely not ${member.displayName}'s*`;
+      else return `${member.displayName}'s`;
     });
 
     const isAkiaBirthday = birthdayMembers.includes(akialyne);
