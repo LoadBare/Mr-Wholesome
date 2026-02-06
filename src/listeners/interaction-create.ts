@@ -1,4 +1,3 @@
-import { AnonymousFeedbackButtonHandler } from 'buttons/utility/anonymous-feedback.js';
 import { Events, Interaction } from 'discord.js';
 import { ticketButtonHandler } from '../buttons/tickets/handler.js';
 import { CatCommandHandler } from '../commands/fun/cat.js';
@@ -17,7 +16,6 @@ import { WarnCommandHandler } from '../commands/moderation/warn.js';
 import { WatchlistCommandHandler } from '../commands/moderation/watchlist.js';
 import { LeaderboardCommandHandler } from '../commands/ranking/leaderboard.js';
 import { RankCommandHandler } from '../commands/ranking/rank.js';
-import { AnonymousFeedbackCommandHandler } from '../commands/utility/anonymous-feedback.js';
 import { BirthdayCommandHandler } from '../commands/utility/birthday.js';
 import { TicketPanelCommandHandler } from '../commands/utility/ticket-panel.js';
 import { TicketCommandHandler } from '../commands/utility/ticket.js';
@@ -70,7 +68,6 @@ class InteractionCreateHandler extends EventHandler {
     else if (cmd === 'rank') new RankCommandHandler(chatInputInteraction).handle();
 
     // Utility
-    else if (cmd === 'anonymous_feedback') new AnonymousFeedbackCommandHandler(chatInputInteraction).handle();
     else if (cmd === 'birthday') new BirthdayCommandHandler(chatInputInteraction).handle();
     else if (cmd === 'ticket-panel') new TicketPanelCommandHandler(chatInputInteraction).handle();
     else if (cmd === 'ticket') new TicketCommandHandler(chatInputInteraction).handle();
@@ -87,7 +84,6 @@ class InteractionCreateHandler extends EventHandler {
     const customId = buttonInteraction.customId;
 
     if (customId.startsWith('ticket:')) new ticketButtonHandler(buttonInteraction).handle();
-    else if (customId.startsWith('feedback')) new AnonymousFeedbackButtonHandler(buttonInteraction).handle();
   }
 
   private async handleUserContextMenu() {

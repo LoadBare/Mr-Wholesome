@@ -37,8 +37,7 @@ export const ChannelIDs = {
   BotSpam: process.env.BOT_SPAM_CHANNEL_ID ?? '',
   ModerationLogs: process.env.MODERATION_LOGS_CHANNEL_ID ?? '',
   LevelUp: process.env.LEVEL_UP_CHANNEL_ID ?? '',
-  IRLStuff: process.env.IRL_STUFF_CHANNEL_ID ?? '',
-  AnonymousFeedback: process.env.ANONYMOUS_FEEDBACK_CHANNEL_ID ?? ''
+  IRLStuff: process.env.IRL_STUFF_CHANNEL_ID ?? ''
 };
 export const RoleIDs = {
   Akialyte: process.env.AKIALYTE_ROLE_ID ?? '',
