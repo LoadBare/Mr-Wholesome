@@ -1,12 +1,8 @@
 /*
- * Here I import all files that contain event listeners
- * in order to run them each once so they begin listening
+ * Import all files that contain event listeners
+ * to run them once so they begin listening
  * out for their respective event.
 */
-
-// guild-ban
-import('./guild-ban/guild-ban-add.js');
-import('./guild-ban/guild-ban-remove.js');
 
 // guild-member
 import('./guild-member/guild-member-add.js');
