@@ -1,12 +1,11 @@
 import { createHash } from 'crypto';
 import {
   Attachment,
-  Client,
   Collection,
-  Message, TextChannel,
+  Message,
   inlineCode
 } from 'discord.js';
-import { database, guild } from './config';
+import { ChannelIDs, database, guild } from './config';
 
 /**
  * Logs a stylised message to the console.
@@ -23,9 +22,10 @@ export function styleLog(message: string, positive: boolean, filename: string, .
  * @param attachments The Discord.JS Collection of attachments to store
  * @returns Array of objects containg each attachment's link, masked link and type
  */
-export async function storeAttachments(attachments: Collection<string, Attachment>, client: Client) {
-  const mediaStorageChannelID = process.env.MEDIA_STORAGE_CHANNEL_ID ?? '';
-  const mediaChannel = await client.channels.fetch(mediaStorageChannelID) as TextChannel;
+export async function storeAttachments(attachments: Collection<string, Attachment>) {
+  const mediaStoreChannel = await guild.channels.fetch(ChannelIDs.MediaStore);
+  if (!mediaStoreChannel?.isSendable()) return [];
+
   const storedAttachments: Array<{ link: string, maskedLink: string, type: string; }> = [];
   const maxAttachmentSize = 15_000_000;
 
@@ -39,7 +39,7 @@ export async function storeAttachments(attachments: Collection<string, Attachmen
           type: attachment.contentType ?? '',
         });
       } else {
-        storedPromiseMessages.push(mediaChannel.send({ files: [{ attachment: attachment.url }] }));
+        storedPromiseMessages.push(mediaStoreChannel.send({ files: [{ attachment: attachment.url }] }));
       }
     }
   });

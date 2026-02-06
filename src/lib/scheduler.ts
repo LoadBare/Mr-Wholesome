@@ -1,7 +1,7 @@
 import { commaListsAnd } from "common-tags";
 import { Cron } from "croner";
 import { GuildMember, TextChannel } from "discord.js";
-import { ChannelIDs, RoleIDs, UserIDs, akialytesGuild, database } from "./config.js";
+import { ChannelIDs, RoleIDs, UserIDs, guild, database } from "./config.js";
 import { formatDate, styleLog } from "./utilities.js";
 
 export default class Scheduler {
@@ -17,12 +17,12 @@ export default class Scheduler {
   private async postBirthdayMessage() {
     const birthdays = await this.fetchTodaysBirthdays();
     const birthdayMembers = birthdays
-      .map((birthday) => akialytesGuild.members.cache.get(birthday.userID))
-      .filter((member): member is GuildMember => member instanceof GuildMember);
+      .map((birthday) => guild.members.cache.get(birthday.userID))
+      .filter((member) => member instanceof GuildMember);
 
     if (birthdayMembers.length === 0) return;
 
-    const akialyne = await akialytesGuild.members.fetch(UserIDs.Akialyne).catch(() => null);
+    const akialyne = await guild.members.fetch(UserIDs.Akialyne).catch(() => null);
     if (!akialyne) return styleLog('Error fetching Akialyne member!', false, 'scheduler.js');
 
     const birthdayMembersString = birthdayMembers.map((member) => {
@@ -38,21 +38,21 @@ export default class Scheduler {
       ${onlyAkiaBirthday ? `Please continue your day as normal!` : `Let's wish ${isAkiaBirthday ? `all *but ${akialyne}, since it is not her birthday,*` : `them`} a happy birthday 🥳`}
     `;
 
-    const birthdayChannel = akialytesGuild.channels.cache.get(ChannelIDs.Birthday);
+    const birthdayChannel = guild.channels.cache.get(ChannelIDs.Birthday);
     if (!(birthdayChannel instanceof TextChannel)) return styleLog('Error fetching birthday channel from cache!', false, 'scheduler.js');
     await birthdayChannel.send(birthdayMessage);
   }
 
   private async updateBirthdayRole() {
-    const birthdayRole = akialytesGuild.roles.cache.get(RoleIDs.Birthday);
+    const birthdayRole = guild.roles.cache.get(RoleIDs.Birthday);
     if (!birthdayRole) return styleLog('Error fetching birthday role from cache!', false, 'scheduler.js');
 
-    const akialyne = await akialytesGuild.members.fetch(UserIDs.Akialyne).catch(() => null);
+    const akialyne = await guild.members.fetch(UserIDs.Akialyne).catch(() => null);
     if (!akialyne) return styleLog('Error fetching Akialyne member!', false, 'scheduler.js');
 
     const birthdays = await this.fetchTodaysBirthdays();
     const birthdayMembers = birthdays
-      .map((birthday) => akialytesGuild.members.cache.get(birthday.userID))
+      .map((birthday) => guild.members.cache.get(birthday.userID))
       .filter((member): member is GuildMember => member instanceof GuildMember);
 
     const nonBirthdayMembers = birthdayRole.members

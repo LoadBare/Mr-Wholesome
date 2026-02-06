@@ -115,7 +115,7 @@ class MessageUpdateHandler extends EventHandler {
     const embeddableContentTypes = ['image/png', 'image/gif', 'image/webp', 'image/jpeg'];
     const removedAttachment = this.oldMessage.attachments.difference(this.newMessage.attachments);
 
-    const storedAttachment = (await storeAttachments(removedAttachment, this.newMessage.client)).at(0);
+    const storedAttachment = (await storeAttachments(removedAttachment)).at(0);
 
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`Message Attachment Removed in ${this.newMessage.channel}`)
