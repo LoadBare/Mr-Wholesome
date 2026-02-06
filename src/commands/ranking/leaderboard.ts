@@ -1,9 +1,9 @@
 import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from "@napi-rs/canvas";
-import { Rank } from "@prisma/client";
 import { stripIndents } from "common-tags";
 import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { baseEmbed, ChannelIDs, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
+import { Rank } from "generated/prisma/client.js";
 
 export class LeaderboardCommandHandler extends CommandHandler {
   private canvas: Canvas;

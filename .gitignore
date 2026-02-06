@@ -2,4 +2,6 @@ node_modules
 .env
 .wakatime-project
 package-lock.json
-.TODO
+/src/generated
+prisma/migrations/
+.vscode

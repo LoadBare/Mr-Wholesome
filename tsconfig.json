@@ -7,8 +7,8 @@
 			"ESNext",
 			"DOM"
 		],
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
+		"module": "esnext",
+		"moduleResolution": "node",
 		"newLine": "lf",
 		"noEmitHelpers": true,
 		"noFallthroughCasesInSwitch": true,
@@ -22,9 +22,9 @@
 		"strict": true,
 		"target": "ESNext",
 		"useDefineForClassFields": true,
-		"rootDir": "src",
 		"outDir": "dist",
 		"baseUrl": "src",
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"esModuleInterop": true
 	}
 }

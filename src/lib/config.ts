@@ -1,9 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { ButtonInteraction, ChatInputCommandInteraction, ColorResolvable, Colors, EmbedBuilder, escapeMarkdown, Guild, ModalSubmitInteraction, TextChannel } from 'discord.js';
+import { PrismaClient } from 'generated/prisma/client.js';
 import { client } from '../index.js';
 import { styleLog } from './utilities.js';
 
-export const database = new PrismaClient();
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? '');
+export const database = new PrismaClient({ adapter });
 export const xpCooldownCache: { [userID: string]: number; } = {};
 export const guild = await client.guilds.fetch(process.env.GUILD_ID ?? '');
 export const EmbedColours = {

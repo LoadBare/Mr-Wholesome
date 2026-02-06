@@ -1,6 +1,6 @@
-import { Ban, Notes, Warning } from "@prisma/client";
 import { stripIndents } from "common-tags";
 import { ChatInputCommandInteraction, EmbedBuilder, time, User } from "discord.js";
+import { Ban, Notes, Warning } from "generated/prisma/client.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
