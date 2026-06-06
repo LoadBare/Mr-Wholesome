@@ -162,12 +162,7 @@ export class RankCommandHandler extends CommandHandler {
     const guildID = this.guild.id;
     const userID = this.interaction.user.id;
 
-    const guildMembers = await this.guild.members.fetch().catch(() => null);
-
-    if (!guildMembers) {
-      return this.handleError('Error fetching members from guild!', true, 'rank.js');
-    }
-
+    const guildMembers = this.guild.members.cache;
     const guildMemberIDs = guildMembers.map((member) => member.id);
 
     const guildRanks = await database.rank.findMany({ where: { guildID }, orderBy: { xp: 'desc' } }).catch(() => null);

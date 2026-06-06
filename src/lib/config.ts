@@ -69,7 +69,7 @@ export abstract class BaseInteractionHandler {
   }
 
   protected async userInGuild(userID: string) {
-    const member = await this.guild.members.fetch(userID).catch(() => null);
+    const member = this.guild.members.cache.get(userID);
     return member;
   }
 

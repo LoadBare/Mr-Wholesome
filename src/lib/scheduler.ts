@@ -1,7 +1,7 @@
 import { commaListsAnd } from "common-tags";
 import { Cron } from "croner";
 import { GuildMember, TextChannel } from "discord.js";
-import { ChannelIDs, RoleIDs, UserIDs, guild, database } from "./config.js";
+import { ChannelIDs, RoleIDs, UserIDs, database, guild } from "./config.js";
 import { formatDate, styleLog } from "./utilities.js";
 
 export default class Scheduler {
@@ -22,7 +22,7 @@ export default class Scheduler {
 
     if (birthdayMembers.length === 0) return;
 
-    const akialyne = await guild.members.fetch(UserIDs.Akialyne).catch(() => null);
+    const akialyne = guild.members.cache.get(UserIDs.Akialyne);
     if (!akialyne) return styleLog('Error fetching Akialyne member!', false, 'scheduler.js');
 
     const birthdayMembersString = birthdayMembers.map((member) => {
@@ -47,7 +47,7 @@ export default class Scheduler {
     const birthdayRole = guild.roles.cache.get(RoleIDs.Birthday);
     if (!birthdayRole) return styleLog('Error fetching birthday role from cache!', false, 'scheduler.js');
 
-    const akialyne = await guild.members.fetch(UserIDs.Akialyne).catch(() => null);
+    const akialyne = guild.members.cache.get(UserIDs.Akialyne);
     if (!akialyne) return styleLog('Error fetching Akialyne member!', false, 'scheduler.js');
 
     const birthdays = await this.fetchTodaysBirthdays();

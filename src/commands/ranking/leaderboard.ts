@@ -1,9 +1,9 @@
 import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from "@napi-rs/canvas";
 import { stripIndents } from "common-tags";
 import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { Rank } from "generated/prisma/client.js";
 import { baseEmbed, ChannelIDs, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
-import { Rank } from "generated/prisma/client.js";
 
 export class LeaderboardCommandHandler extends CommandHandler {
   private canvas: Canvas;
@@ -135,7 +135,7 @@ export class LeaderboardCommandHandler extends CommandHandler {
       update: {},
     });
 
-    const guildMembers = await this.guild.members.fetch();
+    const guildMembers = this.guild.members.cache;
     const guildMemberIDs = guildMembers?.map((member) => member.id);
 
     const guildRanks = await database.rank.findMany({ where: { guildID }, orderBy: { xp: 'desc' }, });
