@@ -1,7 +1,7 @@
-import { Birthday } from '@prisma/client';
 import { stripIndents } from 'common-tags';
 import { EmbedBuilder } from 'discord.js';
-import { baseEmbed, ChannelIDs, database } from '../../lib/config.js';
+import { Birthday } from "../../generated/prisma/client.js";
+import { baseEmbed, ChannelIDs, database, escapeAllFormatting } from '../../lib/config.js';
 import { formatDate } from '../../lib/utilities.js';
 import { CommandHandler } from '../command.js';
 
@@ -57,7 +57,7 @@ export class BirthdayCommandHandler extends CommandHandler {
       const birthdayMember = await this.userInGuild(birthday.userID);
 
       if (birthdayMember) {
-        upcomingBirthdaysList.push(`- **${birthdayMember.displayName}** — ${birthday.date}`);
+        upcomingBirthdaysList.push(`- **${escapeAllFormatting(birthdayMember.displayName)}** — ${birthday.date}`);
       }
     }
 

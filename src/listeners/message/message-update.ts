@@ -6,8 +6,7 @@ import {
 } from 'discord.js';
 import { client } from '../../index.js';
 import { EventHandler, Images, baseEmbed, database } from '../../lib/config.js';
-import { channelIgnoresEvents } from '../../lib/database-utilities.js';
-import { storeAttachments } from '../../lib/utilities.js';
+import { channelIgnoresEvents, storeAttachments } from '../../lib/utilities.js';
 
 class MessageUpdateHandler extends EventHandler {
   oldMessage: Message | PartialMessage;
@@ -116,7 +115,7 @@ class MessageUpdateHandler extends EventHandler {
     const embeddableContentTypes = ['image/png', 'image/gif', 'image/webp', 'image/jpeg'];
     const removedAttachment = this.oldMessage.attachments.difference(this.newMessage.attachments);
 
-    const storedAttachment = (await storeAttachments(removedAttachment, this.newMessage.client)).at(0);
+    const storedAttachment = (await storeAttachments(removedAttachment)).at(0);
 
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`Message Attachment Removed in ${this.newMessage.channel}`)

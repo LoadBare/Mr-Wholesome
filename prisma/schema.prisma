@@ -1,13 +1,16 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"
 }
 
 // --- USER MODELS --- //
@@ -20,8 +23,8 @@ model Birthday {
 // --- GUILD MODELS --- //
 model GuildConfig {
   guildID                 String @id
-  eventIgnoredChannelIDs  String @default("[]")
-  rankedIgnoredChannelIDs String @default("[]")
+  eventIgnoredChannelIDs  String @default("[]") @db.Text
+  rankedIgnoredChannelIDs String @default("[]") @db.Text
 }
 
 model Ban {
@@ -29,7 +32,7 @@ model Ban {
   guildID  String
   authorID String
   bannedID String
-  reason   String
+  reason   String  @db.Text
   unbanned Boolean @default(false)
 }
 
@@ -49,7 +52,7 @@ model Ticket {
   ticketPanelName String
   authorID        String
   channelID       String  @unique
-  addedUsers      String  @default("[]")
+  addedUsers      String  @default("[]") @db.Text
   open            Boolean @default(true)
 }
 
@@ -59,9 +62,9 @@ model TicketPanel {
   guildID               String
   categoryID            String
   moderatorRoleID       String
-  panelEmbedJSON        String
-  ticketEmbedJSON       String
-  postedPanelMessageIDs String @default("[]")
+  panelEmbedJSON        String @db.Text
+  ticketEmbedJSON       String @db.Text
+  postedPanelMessageIDs String @default("[]") @db.Text
 
   @@unique([name, guildID])
 }
@@ -71,7 +74,7 @@ model Warning {
   guildID  String
   authorID String
   warnedID String
-  reason   String
+  reason   String @db.Text
 }
 
 model Notes {
@@ -79,14 +82,14 @@ model Notes {
   authorID  String
   watchedID String
   guildID   String
-  noteText  String
+  noteText  String @db.Text
 }
 
 model MemberStats {
   userID          String
   guildID         String
   messageCount    Int    @default(0)
-  messagesPerHour String
+  messagesPerHour String @db.Text
 
   @@id([userID, guildID])
 }

@@ -1,6 +1,6 @@
-import { Ban, Notes, Warning } from "@prisma/client";
 import { stripIndents } from "common-tags";
 import { ChatInputCommandInteraction, EmbedBuilder, time, User } from "discord.js";
+import { Ban, Notes, Warning } from "../../generated/prisma/client.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -82,6 +82,8 @@ class BanViewer extends CommandHandler {
         └ **Ban ID:** ${ban.date}`
       );
     }
+
+    if (bans.length === 0) embedDescription.push(`There are no bans in ${this.guild.name}`);
 
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`Bans in ${this.guild.name}`)
@@ -196,6 +198,8 @@ class WarningViewer extends CommandHandler {
       );
     });
 
+    if (warnings.length === 0) embedDescription.push(`There are no warnings in ${this.guild.name}`);
+
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`Warnings in ${this.guild.name}`)
       .setThumbnail(this.guild.iconURL())
@@ -304,6 +308,8 @@ class WatchlistViewer extends CommandHandler {
         └ **Latest Note:** ${time(new Date(Number(value.latest)), 'R')}`
       );
     });
+
+    if (notes.length === 0) embedDescription.push(`There is nobody on ${this.guild.name}'s watchlist`);
 
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`${this.guild.name}'s Watchlist`)

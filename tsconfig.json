@@ -7,8 +7,6 @@
 			"ESNext",
 			"DOM"
 		],
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
 		"newLine": "lf",
 		"noEmitHelpers": true,
 		"noFallthroughCasesInSwitch": true,
@@ -17,14 +15,11 @@
 		"noUnusedParameters": true,
 		"preserveConstEnums": true,
 		"pretty": true,
-		"removeComments": true,
 		"resolveJsonModule": true,
-		"strict": true,
-		"target": "ESNext",
 		"useDefineForClassFields": true,
-		"rootDir": "src",
 		"outDir": "dist",
-		"baseUrl": "src",
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"types": ["node"],
+		"rootDir": "./src"
 	}
 }

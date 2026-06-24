@@ -1,7 +1,7 @@
-import { Canvas, GlobalFonts, SKRSContext2D, loadImage } from "@napi-rs/canvas";
-import { Rank } from "@prisma/client";
+import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from "@napi-rs/canvas";
 import { stripIndents } from "common-tags";
 import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { Rank } from "../../generated/prisma/client.js";
 import { baseEmbed, ChannelIDs, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -14,7 +14,7 @@ export class LeaderboardCommandHandler extends CommandHandler {
     super(interaction);
 
     GlobalFonts.registerFromPath('assets/fonts/Ubuntu-Medium.ttf', 'ubuntu-medium');
-    GlobalFonts.registerFromPath('assets/fonts/TwitterColorEmoji-SVGinOT.ttf', 'twitter-emoji');
+    GlobalFonts.registerFromPath('assets/fonts/NotoColorEmoji-Regular.ttf', 'notocoloremoji');
     this.canvas = new Canvas(620, 610);
     this.canvasContext = this.canvas.getContext('2d');
     this.page = this.interaction.options.getInteger('page', false) || 1;
@@ -72,12 +72,12 @@ export class LeaderboardCommandHandler extends CommandHandler {
       const rankPosition = (this.page - 1) * 10 + index + 1;
 
       this.canvasContext.drawImage(barImageToDraw, barX, barY + (index * (barHeight + barSpacing)), barWidth, barHeight);
-      this.drawBarText(rank, rankPosition);
+      this.drawBarText(rank, rankPosition, index);
     });
 
   }
 
-  private drawBarText(rank: Rank, rankPosition: number) {
+  private drawBarText(rank: Rank, rankPosition: number, index: number) {
     const barTextX = 20;
     const barTextY = 43;
     const barTextSpacing = 60;
@@ -87,27 +87,33 @@ export class LeaderboardCommandHandler extends CommandHandler {
     else if (rankPosition === 2) this.canvasContext.fillStyle = '#D3D3D3';
     else if (rankPosition === 3) this.canvasContext.fillStyle = '#CD7F32';
     else this.canvasContext.fillStyle = '#FFFFFF';
-    this.canvasContext.font = `24px ubuntu-medium, twitter-emoji`;
+    this.canvasContext.font = `24px ubuntu-medium, notocoloremoji`;
     this.canvasContext.textAlign = 'left';
-    this.canvasContext.fillText(`#${rankPosition}`, barTextX, barTextY + (rankPosition - 1) * barTextSpacing);
+    this.canvasContext.fillText(`#${rankPosition}`, barTextX, barTextY + (index) * barTextSpacing);
+    const rankTextLength = this.canvasContext.measureText(`#${rankPosition}`).width;
 
     // Draw Dot Separator
     this.canvasContext.fillStyle = '#00000066';
-    this.canvasContext.fillText('•', barTextX + 35, barTextY + (rankPosition - 1) * barTextSpacing);
+    this.canvasContext.fillText('•', barTextX + rankTextLength + 5, barTextY + (index) * barTextSpacing);
     this.canvasContext.fillStyle = '#FFFFFF';
 
     // Draw Member XP
     const memberXP = rank.xp;
     const xpTextX = 600;
     this.canvasContext.textAlign = 'right';
-    this.canvasContext.fillText(`${memberXP} XP`, xpTextX, barTextY + (rankPosition - 1) * barTextSpacing);
+    this.canvasContext.fillText(`${memberXP} XP`, xpTextX, barTextY + (index) * barTextSpacing);
     this.canvasContext.textAlign = 'left';
 
     // Draw Member Name
     const xpTextWidth = this.canvasContext.measureText(`${memberXP} XP`).width;
     const member = this.guild.members.cache.get(rank.userID);
     const memberName = member?.displayName || 'Unknown User';
-    this.canvasContext.fillText(memberName, barTextX + 50, barTextY + (rankPosition - 1) * barTextSpacing, xpTextX - xpTextWidth - 50 - 10 - barTextX);
+    this.canvasContext.font = 'bold 24px ubuntu-medium, notocoloremoji';
+    this.canvasContext.strokeText(memberName, barTextX + rankTextLength + 20, barTextY + (index) * barTextSpacing, xpTextX - xpTextWidth - 50 - 10 - barTextX);
+    this.canvasContext.font = '24px ubuntu-medium, notocoloremoji';
+    this.canvasContext.fillStyle = member?.roles.highest.hexColor || '#FFFFFF';
+    this.canvasContext.fillText(memberName, barTextX + rankTextLength + 20, barTextY + (index) * barTextSpacing, xpTextX - xpTextWidth - 50 - 10 - barTextX);
+    this.canvasContext.fillStyle = '#FFFFFF';
   }
 
   private async createLeaderboardImage() {
@@ -129,7 +135,7 @@ export class LeaderboardCommandHandler extends CommandHandler {
       update: {},
     });
 
-    const guildMembers = await this.guild.members.fetch();
+    const guildMembers = this.guild.members.cache;
     const guildMemberIDs = guildMembers?.map((member) => member.id);
 
     const guildRanks = await database.rank.findMany({ where: { guildID }, orderBy: { xp: 'desc' }, });

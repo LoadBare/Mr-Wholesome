@@ -1,21 +1,21 @@
-import { ActionRowBuilder, ChatInputCommandInteraction, ModalActionRowComponentBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, User } from "discord.js";
-import { warnModalData } from "../../lib/api.js";
+import { ActionRowBuilder, ChatInputCommandInteraction, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle, User } from "discord.js";
+import { WarningModalHandler } from "../../modals/moderation/warn.js";
 import { CommandHandler } from "../command.js";
 
 export class WarnCommandHandler extends CommandHandler {
-  private user: User;
-  private notify_user: boolean;
+  private targetUser: User;
+  private notifyUser: boolean;
 
   constructor(interaction: ChatInputCommandInteraction) {
     super(interaction);
-    this.user = interaction.options.getUser('user', true);
-    this.notify_user = interaction.options.getBoolean('notify_user', true);
+    this.targetUser = interaction.options.getUser('user', true);
+    this.notifyUser = interaction.options.getBoolean('notify_user', true);
   }
 
   async handle() {
     const warnModal = new ModalBuilder()
-      .setCustomId(`warn:${this.interaction.id}`)
-      .setTitle(`Warn ${this.user.username}`);
+      .setCustomId(this.interaction.id)
+      .setTitle(`Warn ${this.targetUser.username}`);
 
     const reasonTextInput = new TextInputBuilder()
       .setCustomId('reason')
@@ -29,6 +29,14 @@ export class WarnCommandHandler extends CommandHandler {
     warnModal.addComponents(reasonActionRow);
 
     await this.interaction.showModal(warnModal);
-    await warnModalData.set(this.interaction.id, this.user.id, this.notify_user);
+
+    const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 10 * 60 * 1000 }).catch(() => { });
+
+    if (!modalSubmitInteraction) {
+      return;
+    }
+
+    new WarningModalHandler(modalSubmitInteraction, this.targetUser, this.notifyUser).handle();
   }
 }

@@ -1,11 +1,20 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { ButtonInteraction, ChatInputCommandInteraction, ColorResolvable, Colors, EmbedBuilder, escapeMarkdown, Guild, ModalSubmitInteraction, TextChannel } from 'discord.js';
+import { PrismaClient } from '../generated/prisma/client.js';
 import { client } from '../index.js';
 import { styleLog } from './utilities.js';
 
-export const database = new PrismaClient();
+const adapter = new PrismaMariaDb({
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+  connectionLimit: 5,
+});
+export const database = new PrismaClient({ adapter });
+
 export const xpCooldownCache: { [userID: string]: number; } = {};
-export const akialytesGuild = await client.guilds.fetch(process.env.AKIALYTES_GUILD_ID ?? '');
+export const guild = await client.guilds.fetch(process.env.GUILD_ID ?? '');
 export const EmbedColours = {
   Positive: Colors.Green,
   Neutral: Colors.Aqua,
@@ -20,14 +29,14 @@ export const Emotes = {
   Removed: process.env.REMOVED ?? '➖',
   Ghost: process.env.GHOST ?? '👻',
   Bird: process.env.BIRD ?? '🐦',
-  Chart: process.env.CHART ?? '📊'
+  Chart: process.env.CHART ?? '📊',
+  Loading: process.env.LOADING ?? '⏳'
 };
 export const Images = {
   WatchedUser: 'https://cdn.discordapp.com/attachments/1297278175046533247/1298572168338083930/ic_fluent_person_note_24_filled.png?ex=671a0d13&is=6718bb93&hm=b494bb3f608a08225c554c78b37fe61e37fe3e116f90814ed29c7c3067f900f5&'
 };
 export const UserIDs = {
-  Bot: process.env.BOT_ID ?? '',
-  Akialyne: process.env.AKIALYNE_USER_ID ?? '',
+  Akialyne: process.env.AKIALYNE_USER_ID ?? ''
 };
 export const ChannelIDs = {
   Birthday: process.env.BIRTHDAY_CHANNEL_ID ?? '',
@@ -36,15 +45,12 @@ export const ChannelIDs = {
   BotSpam: process.env.BOT_SPAM_CHANNEL_ID ?? '',
   ModerationLogs: process.env.MODERATION_LOGS_CHANNEL_ID ?? '',
   LevelUp: process.env.LEVEL_UP_CHANNEL_ID ?? '',
-  IRLStuff: process.env.IRL_STUFF_CHANNEL_ID ?? ''
+  IRLStuff: process.env.IRL_STUFF_CHANNEL_ID ?? '',
+  MediaStore: process.env.MEDIA_STORE_CHANNEL_ID ?? ''
 };
 export const RoleIDs = {
   Akialyte: process.env.AKIALYTE_ROLE_ID ?? '',
   Birthday: process.env.BIRTHDAY_ROLE_ID ?? '',
-};
-export const GuildIDs = {
-  BotTesting: process.env.BOT_TESTING_GUILD_ID ?? '',
-  Akialytes: process.env.AKIALYTES_GUILD_ID ?? '',
 };
 export function escapeAllFormatting(text: string | null) {
   return escapeMarkdown(text ?? '', { bulletedList: true, heading: true, maskedLink: true, numberedList: true });
@@ -70,7 +76,7 @@ export abstract class BaseInteractionHandler {
   }
 
   protected async userInGuild(userID: string) {
-    const member = await this.guild.members.fetch(userID).catch(() => null);
+    const member = this.guild.members.cache.get(userID);
     return member;
   }
 

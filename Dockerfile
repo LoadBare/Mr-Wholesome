@@ -1,29 +1,16 @@
-FROM node:lts AS build
+FROM node:lts-alpine
 
-WORKDIR /home/mr-wholesome/
+ENV NODE_ENV=production
+
+WORKDIR /app
 
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY prisma ./prisma/
-
-RUN npm ci
-
 COPY src ./src
-
-RUN npx tsc
-
-
-FROM node:lts
-
-WORKDIR /home/mr-wholesome/
-
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY prisma ./prisma/
 COPY assets ./assets/
 
-RUN npm install --omit=dev
+RUN npm ci && \
+    npx prisma generate
 
-COPY --from=build /home/mr-wholesome/dist ./dist
-
-CMD ["node", "./dist/index.js"]
+CMD ["npx", "tsx", "./src/index.ts"]

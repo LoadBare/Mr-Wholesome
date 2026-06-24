@@ -1,9 +1,7 @@
 import { ActivityType, Client, GatewayIntentBits } from 'discord.js';
-import * as dotenv from 'dotenv';
+import { initialiseListeners } from './listeners/index.js';
 
 const { Guilds, GuildMembers, GuildMessages, MessageContent, GuildModeration } = GatewayIntentBits;
-
-dotenv.config({ path: '.env.development' });
 
 export const client = new Client({
   intents: [Guilds, GuildMembers, GuildMessages, MessageContent, GuildModeration],
@@ -20,7 +18,7 @@ export const client = new Client({
 });
 
 // Initalise event listeners
-import('./listeners/index.js');
+initialiseListeners();
 
 client.login(process.env.TOKEN)
   .catch((e) => console.error('An error occurred while logging in!', e));

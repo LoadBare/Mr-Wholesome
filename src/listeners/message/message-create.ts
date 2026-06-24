@@ -1,10 +1,9 @@
 import { AttachmentBuilder, Events, ForumChannel, Message } from 'discord.js';
 import { client } from '../../index.js';
 import { ChannelIDs, Emotes, EventHandler, UserIDs } from '../../lib/config.js';
-import { channelIgnoresEvents } from '../../lib/database-utilities.js';
 import MessageStatisticsHandler from '../../lib/message-statistics-handler.js';
 import RankingHandler from '../../lib/ranking-handler.js';
-import { sleep, styleLog } from '../../lib/utilities.js';
+import { channelIgnoresEvents, sleep, styleLog } from '../../lib/utilities.js';
 
 class MessageCreateHandler extends EventHandler {
   message: Message;
@@ -119,7 +118,8 @@ class MessageCreateHandler extends EventHandler {
   private async akiaSnoGif() {
     const channelIsIRLStuff = this.message.channelId === ChannelIDs.IRLStuff;
     const authorIsAkia = this.message.author.id === UserIDs.Akialyne;
-    if (!(channelIsIRLStuff && authorIsAkia)) return;
+    const messageContainsSno = this.message.content.search(/[s]+[n]+[o]+/mi) !== -1;
+    if (!(channelIsIRLStuff && authorIsAkia && messageContainsSno)) return;
 
     const snoAttachment = new AttachmentBuilder('./assets/SNO.gif');
     await this.message.reply({ files: [snoAttachment] });

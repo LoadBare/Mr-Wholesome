@@ -1,5 +1,4 @@
 import { Events, Interaction } from 'discord.js';
-import { ToggleLevelNotifButtonHandler } from '../buttons/ranking/toggle-level-notifs.js';
 import { ticketButtonHandler } from '../buttons/tickets/handler.js';
 import { CatCommandHandler } from '../commands/fun/cat.js';
 import { DogCommandHandler } from '../commands/fun/dog.js';
@@ -24,10 +23,6 @@ import { ViewCommandHandler } from '../commands/utility/view.js';
 import { XPCommandHandler } from '../commands/utility/xp.js';
 import { client } from '../index.js';
 import { EventHandler } from '../lib/config.js';
-import { BanModalHandler } from '../modals/moderation/ban.js';
-import { WarningModalHandler } from '../modals/moderation/warn.js';
-import { WatchlistModalHandler } from '../modals/moderation/watchlist.js';
-import { TicketPanelModalHandler } from '../modals/utility/ticket-panel.js';
 
 class InteractionCreateHandler extends EventHandler {
   interaction: Interaction;
@@ -40,7 +35,6 @@ class InteractionCreateHandler extends EventHandler {
   handle() {
     this.handleChatInputCommand();
     this.handleButton();
-    this.handleModal();
     this.handleUserContextMenu();
   }
 
@@ -89,18 +83,7 @@ class InteractionCreateHandler extends EventHandler {
     const buttonInteraction = this.interaction;
     const customId = buttonInteraction.customId;
 
-    if (customId === 'toggle-level-notif') new ToggleLevelNotifButtonHandler(buttonInteraction).handle();
     if (customId.startsWith('ticket:')) new ticketButtonHandler(buttonInteraction).handle();
-  }
-
-  private async handleModal() {
-    if (!this.interaction.isModalSubmit()) return;
-    const modalInteraction = this.interaction;
-
-    if (modalInteraction.customId.startsWith('ban:')) new BanModalHandler(modalInteraction).handle();
-    else if (modalInteraction.customId.startsWith('warn:')) new WarningModalHandler(modalInteraction).handle();
-    else if (modalInteraction.customId.startsWith('ticket-panel:')) new TicketPanelModalHandler(modalInteraction).handle();
-    else if (modalInteraction.customId.startsWith('watchlist:')) new WatchlistModalHandler(modalInteraction).handle();
   }
 
   private async handleUserContextMenu() {

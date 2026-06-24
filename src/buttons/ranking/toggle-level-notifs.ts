@@ -1,28 +1,23 @@
 import { stripIndents } from "common-tags";
-import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from "discord.js";
-import { levelNotifButtonData } from "../../lib/api.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, EmbedBuilder, MessageFlags } from "discord.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { ButtonHandler } from "../button-handler.js";
 
 export class ToggleLevelNotifButtonHandler extends ButtonHandler {
+  private levelNotifs: boolean;
+
+  constructor(interaction: ButtonInteraction, levelNotifs: boolean) {
+    super(interaction);
+    this.levelNotifs = levelNotifs;
+  }
+
   async handle() {
-    await this.interaction.deferReply({ ephemeral: true });
-    const buttonData = await levelNotifButtonData.get(this.interaction.message.id);
+    await this.interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-    if (!buttonData) {
-      return this.handleError('Error fetching button data from levelNotifButtonData.', true, 'toggle-level-notifs.js');
-    }
-
-    const { ownerID, levelNotifState } = buttonData;
     const userID = this.interaction.user.id;
-    const clickNotFromOwner = userID !== ownerID;
-    if (clickNotFromOwner) {
-      return this.handleError('This button does not belong to you.');
-    }
-
     const successfulUpdate = await database.rank.upsert({
-      create: { guildID: this.guild.id, userID, levelNotifs: levelNotifState },
-      update: { levelNotifs: !levelNotifState },
+      create: { guildID: this.guild.id, userID, levelNotifs: this.levelNotifs },
+      update: { levelNotifs: !this.levelNotifs },
       where: { userID_guildID: { guildID: this.guild.id, userID } }
     }).catch(() => false).then(() => true);
 
@@ -34,12 +29,11 @@ export class ToggleLevelNotifButtonHandler extends ButtonHandler {
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`${displayName}'s Level Notifications`)
       .setDescription(stripIndents
-        `✅ Successfully ${!levelNotifState ? 'enabled' : 'disabled'} level up ping!
-        You will ${levelNotifState ? 'no longer' : 'now'} be pinged when you level up.`
+        `✅ Successfully ${!this.levelNotifs ? 'enabled' : 'disabled'} level up ping!
+        You will ${this.levelNotifs ? 'no longer' : 'now'} be pinged when you level up.`
       );
 
-    await this.disableButtonReusability(levelNotifState);
-    await levelNotifButtonData.del(this.interaction.message.id);
+    await this.disableButtonReusability(this.levelNotifs);
 
     await this.interaction.editReply({ embeds: [embed] });
   }

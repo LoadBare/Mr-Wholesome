@@ -1,7 +1,7 @@
 import { stripIndents } from "common-tags";
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, ComponentType, EmbedBuilder, ForumChannel, MediaChannel, ModalActionRowComponentBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ticketPanelModalData } from "../../lib/api.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, ComponentType, EmbedBuilder, ForumChannel, MediaChannel, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
 import { baseEmbed, database, EmbedColours } from "../../lib/config.js";
+import { TicketPanelModalHandler } from "../../modals/utility/ticket-panel.js";
 import { CommandHandler } from "../command.js";
 
 export class TicketPanelCommandHandler extends CommandHandler {
@@ -19,7 +19,7 @@ export class TicketPanelCommandHandler extends CommandHandler {
     const moderatorRole = this.interaction.options.getRole('moderator-role', true);
 
     const ticketPanelModal = new ModalBuilder()
-      .setCustomId(`ticket-panel:${this.interaction.id}`)
+      .setCustomId(this.interaction.id)
       .setTitle('Ticket Panel');
 
     const panelTitleTextInput = new TextInputBuilder()
@@ -49,7 +49,15 @@ export class TicketPanelCommandHandler extends CommandHandler {
     ticketPanelModal.addComponents(panelTitleActionRow, panelDescriptionActionRow, ticketDescriptionActionRow);
 
     await this.interaction.showModal(ticketPanelModal);
-    await ticketPanelModalData.set(this.interaction.id, name, category.id, moderatorRole.id);
+
+    const filter = (i: ModalSubmitInteraction) => i.customId === this.interaction.id;
+    const modalSubmitInteraction = await this.interaction.awaitModalSubmit({ filter, time: 10 * 60 * 1000 }).catch(() => { });
+
+    if (!modalSubmitInteraction) {
+      return;
+    }
+
+    new TicketPanelModalHandler(modalSubmitInteraction, name, category.id, moderatorRole.id).handle();
   }
 
   private async postTicketPanel() {
@@ -120,11 +128,11 @@ export class TicketPanelCommandHandler extends CommandHandler {
     const message = await this.interaction.reply({ embeds: [embed], components: [confirmationButtons] });
     const filter = (i: ButtonInteraction) => i.user.id === this.interaction.user.id;
 
-    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 30_000 }).catch(() => { });
+    const confirmation = await message.awaitMessageComponent({ filter, componentType: ComponentType.Button, time: 60 * 1000 }).catch(() => { });
 
     embed
       .setTitle('Deletion Cancelled')
-      .setDescription('No input detected after 30 seconds, deletion has been cancelled.')
+      .setDescription('No input detected after 60 seconds, deletion has been cancelled.')
       .setColor(EmbedColours.Negative);
     if (!confirmation) return this.interaction.editReply({ embeds: [embed], components: [] });
 

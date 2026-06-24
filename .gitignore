@@ -1,9 +1,7 @@
 node_modules
-.env.development
-.env.production
-v2-migration-files
+.env
 .wakatime-project
-tsconfig.tsbuildinfo
 package-lock.json
-*.sqlite
-.TODO
+/src/generated
+prisma/migrations/
+.vscode

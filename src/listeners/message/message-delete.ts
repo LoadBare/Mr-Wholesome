@@ -1,17 +1,18 @@
 import {
-  AuditLogEvent, EmbedBuilder, Events, Message, PartialMessage,
+  AuditLogEvent, EmbedBuilder, Events, Guild, Message, PartialMessage,
 } from 'discord.js';
 import { client } from '../../index.js';
 import { EmbedColours, EventHandler, Images, baseEmbed, database } from '../../lib/config.js';
-import { channelIgnoresEvents } from '../../lib/database-utilities.js';
-import { storeAttachments } from '../../lib/utilities.js';
+import { channelIgnoresEvents, storeAttachments } from '../../lib/utilities.js';
 
 class MessageDeleteHandler extends EventHandler {
   message: Message | PartialMessage;
+  guild: Guild | null;
 
   constructor(message: Message | PartialMessage) {
     super();
     this.message = message;
+    this.guild = message.guild;
   }
 
   async handle() {
@@ -22,25 +23,34 @@ class MessageDeleteHandler extends EventHandler {
     this.logDeletedMessage();
   }
 
+  private async getMessageDeleter() {
+    const auditLogs = await this.guild?.fetchAuditLogs({ type: AuditLogEvent.MessageDelete });
+    const latestAuditLog = auditLogs?.entries.at(0);
+
+    let messageDeleter: string;
+    if (
+      latestAuditLog !== undefined
+      && latestAuditLog.targetId === this.message.author?.id
+      && (Date.now() - 10000) < latestAuditLog.createdTimestamp
+    ) {
+      messageDeleter = latestAuditLog.executor?.username ?? '???';
+    } else {
+      messageDeleter = this.message.author?.username ?? '???';
+    }
+
+    return messageDeleter;
+  }
+
   private async logDeletedMessage() {
     const embeddableContentTypes = ['image/png', 'image/gif', 'image/webp', 'image/jpeg'];
 
     const removedAttachments = this.message.attachments;
-    const storedAttachments = await storeAttachments(removedAttachments, this.message.client);
+    const storedAttachments = await storeAttachments(removedAttachments);
 
-    const auditLogs = await this.message.guild?.fetchAuditLogs({ type: AuditLogEvent.MessageDelete });
-    const latestAuditLog = auditLogs?.entries.at(0);
-
-    let userWhoDeletedMessage = this.message.author;
-    if (latestAuditLog !== undefined // Audit log exists
-      && latestAuditLog.targetId === this.message.author?.id // Audit log target is message author
-      && (Date.now() - 10000) < latestAuditLog.createdTimestamp // Audit log created in last 10 seconds
-    ) {
-      userWhoDeletedMessage = latestAuditLog.executor;
-    }
+    const userWhoDeletedMessage = await this.getMessageDeleter();
 
     const embedDescription = [
-      `### Deleted by ${userWhoDeletedMessage}`,
+      `### Deleted by @${userWhoDeletedMessage}`,
     ];
 
     const embed = new EmbedBuilder(baseEmbed)

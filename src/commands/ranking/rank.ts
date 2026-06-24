@@ -12,7 +12,7 @@ export class RankCommandHandler extends CommandHandler {
     super(interaction);
 
     GlobalFonts.registerFromPath('assets/fonts/Ubuntu-Medium.ttf', 'ubuntu-medium');
-    GlobalFonts.registerFromPath('assets/fonts/TwitterColorEmoji-SVGinOT.ttf', 'twitter-emoji');
+    GlobalFonts.registerFromPath('assets/fonts/NotoColorEmoji-Regular.ttf', 'notocoloremoji');
     this.canvas = new Canvas(1343, 410);
     this.canvasContext = this.canvas.getContext('2d');
   }
@@ -108,7 +108,7 @@ export class RankCommandHandler extends CommandHandler {
 
     this.canvasContext.fillStyle = 'white';
     this.canvasContext.textAlign = 'center';
-    this.canvasContext.font = 'bold 80px ubuntu-medium, twitter-emoji';
+    this.canvasContext.font = 'bold 80px ubuntu-medium, notocoloremoji';
     this.canvasContext.fillText(usernameText, aboveBarX, 100, 900);
 
     this.canvasContext.font = 'bold 35px ubuntu-medium';
@@ -162,12 +162,7 @@ export class RankCommandHandler extends CommandHandler {
     const guildID = this.guild.id;
     const userID = this.interaction.user.id;
 
-    const guildMembers = await this.guild.members.fetch().catch(() => null);
-
-    if (!guildMembers) {
-      return this.handleError('Error fetching members from guild!', true, 'rank.js');
-    }
-
+    const guildMembers = this.guild.members.cache;
     const guildMemberIDs = guildMembers.map((member) => member.id);
 
     const guildRanks = await database.rank.findMany({ where: { guildID }, orderBy: { xp: 'desc' } }).catch(() => null);
