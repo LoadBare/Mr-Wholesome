@@ -5,7 +5,7 @@ import {
   Message,
   inlineCode
 } from 'discord.js';
-import { ChannelIDs, database, guild } from './config';
+import { ChannelIDs, database, guild } from './config.js';
 
 /**
  * Logs a stylised message to the console.

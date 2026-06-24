@@ -1,7 +1,7 @@
 import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from "@napi-rs/canvas";
 import { stripIndents } from "common-tags";
 import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { Rank } from "generated/prisma/client.js";
+import { Rank } from "../../generated/prisma/client.js";
 import { baseEmbed, ChannelIDs, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 

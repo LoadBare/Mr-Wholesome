@@ -1,6 +1,6 @@
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { ButtonInteraction, ChatInputCommandInteraction, ColorResolvable, Colors, EmbedBuilder, escapeMarkdown, Guild, ModalSubmitInteraction, TextChannel } from 'discord.js';
-import { PrismaClient } from 'generated/prisma/client.js';
+import { PrismaClient } from '../generated/prisma/client.js';
 import { client } from '../index.js';
 import { styleLog } from './utilities.js';
 
