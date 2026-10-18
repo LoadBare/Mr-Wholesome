@@ -5,3 +5,4 @@ package-lock.json
 /src/generated
 prisma/migrations/
 .vscode
+prisma.config.ts

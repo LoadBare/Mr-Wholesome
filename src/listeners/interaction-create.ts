@@ -1,4 +1,5 @@
 import { Events, Interaction } from 'discord.js';
+import { leaderboardButtonsHandler } from '../buttons/leaderboard/handler.js';
 import { ticketButtonHandler } from '../buttons/tickets/handler.js';
 import { CatCommandHandler } from '../commands/fun/cat.js';
 import { DogCommandHandler } from '../commands/fun/dog.js';
@@ -84,6 +85,7 @@ class InteractionCreateHandler extends EventHandler {
     const customId = buttonInteraction.customId;
 
     if (customId.startsWith('ticket:')) new ticketButtonHandler(buttonInteraction).handle();
+    else if (customId.startsWith('leaderboard:')) new leaderboardButtonsHandler(buttonInteraction).handle();
   }
 
   private async handleUserContextMenu() {
