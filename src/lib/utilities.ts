@@ -5,6 +5,8 @@ import {
   Message,
   inlineCode
 } from 'discord.js';
+import { eq } from 'drizzle-orm';
+import * as schema from '../db/schema.js';
 import { ChannelIDs, database, guild } from './config.js';
 
 /**
@@ -163,10 +165,12 @@ export function formatDate(day: number, month: number) {
 export async function channelIgnoresEvents(guildID: string | null, channelID: string | null) {
   if (!guildID || !channelID) return true;
 
-  const guildConfig = await database.guildConfig.findUnique({
-    where: { guildID },
-  }).catch(() => null);
+  const guildConfig = await database
+    .select()
+    .from(schema.guildConfig)
+    .where(eq(schema.guildConfig.id, guildID))
+    .get();
 
-  const eventIgnoredChannelIDs = guildConfig?.eventIgnoredChannelIDs.split(',') ?? [];
+  const eventIgnoredChannelIDs = guildConfig?.eventIgnoredChannelIDs ?? [];
   return eventIgnoredChannelIDs.includes(channelID);
 }

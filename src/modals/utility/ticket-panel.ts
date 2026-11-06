@@ -1,5 +1,6 @@
 import { stripIndents } from "common-tags";
 import { chatInputApplicationCommandMention, Colors, EmbedBuilder, ModalSubmitInteraction } from "discord.js";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { ModalHandler } from "../handler.js";
 
@@ -35,8 +36,9 @@ export class TicketPanelModalHandler extends ModalHandler {
 
     const guildID = this.guild.id;
     const timeCreated = Date.now().toString();
-    await database.ticketPanel.create({
-      data: {
+    await database
+      .insert(schema.ticketPanels)
+      .values({
         categoryID: this.categoryID,
         guildID,
         moderatorRoleID: this.moderatorRoleID,
@@ -44,8 +46,7 @@ export class TicketPanelModalHandler extends ModalHandler {
         panelEmbedJSON,
         ticketEmbedJSON,
         timeCreated
-      }
-    });
+      });
 
     const content = stripIndents`✅ Ticket panel "${[this.panelName]}" created successfully.
     You can use ${chatInputApplicationCommandMention('ticket-panel', 'post', '1260499767906275369')} to post this panel in a channel.

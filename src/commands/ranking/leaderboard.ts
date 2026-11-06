@@ -1,6 +1,7 @@
 import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from "@napi-rs/canvas";
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Guild } from "discord.js";
-import { Rank } from "../../generated/prisma/client.js";
+import { desc, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, ChannelIDs, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -124,7 +125,7 @@ export class LeaderboardPayload {
     });
   }
 
-  private drawBarText(rank: Rank, rankPosition: number, index: number) {
+  private drawBarText(rank: typeof schema.ranks.$inferSelect, rankPosition: number, index: number) {
     const barTextX = 20;
     const barTextY = 43;
     const barTextSpacing = 60;
@@ -170,13 +171,16 @@ export class LeaderboardPayload {
     const guildMembers = this.guild.members.cache;
     const guildMemberIDs = guildMembers?.map((member) => member.id);
 
-    await database.rank.upsert({
-      where: { userID_guildID: { guildID, userID } },
-      create: { guildID, userID },
-      update: {},
-    });
+    await database
+      .insert(schema.ranks)
+      .values({ guildID, userID })
+      .onConflictDoNothing();
 
-    const guildRanks = await database.rank.findMany({ where: { guildID }, orderBy: { xp: 'desc' }, });
+    const guildRanks = await database
+      .select()
+      .from(schema.ranks)
+      .where(eq(schema.ranks.guildID, guildID))
+      .orderBy(desc(schema.ranks.xp));
     const filteredRanks = guildRanks.filter((rank) => guildMemberIDs?.includes(rank.userID));
 
     if (!pageSlicing) return filteredRanks;

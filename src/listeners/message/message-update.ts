@@ -4,6 +4,8 @@ import {
   ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder,
   Events, Message, PartialMessage
 } from 'discord.js';
+import { eq } from 'drizzle-orm';
+import * as schema from '../../db/schema.js';
 import { client } from '../../index.js';
 import { EventHandler, Images, baseEmbed, database } from '../../lib/config.js';
 import { channelIgnoresEvents, storeAttachments } from '../../lib/utilities.js';
@@ -149,9 +151,10 @@ class MessageUpdateHandler extends EventHandler {
 
   // == Database Methods ==
   private async fetchWatchlist() {
-    const result = await database.notes.findMany({
-      where: { guildID: this.newMessage.guild?.id }
-    });
+    const result = await database
+      .select()
+      .from(schema.notes)
+      .where(eq(schema.notes.guildID, this.newMessage.guildId!));
 
     return result;
   }

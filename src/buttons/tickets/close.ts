@@ -1,4 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, TextChannel } from "discord.js";
+import { eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { database, EmbedColours } from "../../lib/config.js";
 import { ButtonHandler } from "../button-handler.js";
 
@@ -6,7 +8,11 @@ export class closeTicketButtonHandler extends ButtonHandler {
   async handle() {
     await this.interaction.deferReply();
     const timeCreated = this.interaction.customId.split(':')[2];
-    const ticket = await database.ticket.findUnique({ where: { timeCreated } });
+    const ticket = await database
+      .select()
+      .from(schema.tickets)
+      .where(eq(schema.tickets.timeCreated, timeCreated))
+      .get();
 
     if (!ticket) {
       return this.handleError('Error fetching ticket from TICKET table.', true, 'close-ticket.js');
@@ -17,16 +23,17 @@ export class closeTicketButtonHandler extends ButtonHandler {
     }
 
     const ticketChannel = this.interaction.channel as TextChannel; // Button is only available in ticket channel, so it's safe to cast to TextChannel
-    const addedUsers: string[] = JSON.parse(ticket.addedUsers);
-    for (const addedUser of addedUsers) {
+    for (const addedUser of ticket.addedUsers) {
       await ticketChannel.permissionOverwrites.delete(addedUser);
     }
     await ticketChannel.permissionOverwrites.delete(ticket.authorID);
     await ticketChannel.setName(`✅${ticketChannel.name.substring(1)}`);
-    const ticketUpdated = await database.ticket.update({
-      where: { timeCreated },
-      data: { open: false }
-    }).catch(() => false).then(() => true);
+    const ticketUpdated = await database
+      .update(schema.tickets)
+      .set({ open: false })
+      .where(eq(schema.tickets.timeCreated, timeCreated))
+      .then(() => true)
+      .catch(() => false);
 
     if (!ticketUpdated) {
       return this.handleError('Error updating ticket in TICKET table!', true, 'close-ticket.js');

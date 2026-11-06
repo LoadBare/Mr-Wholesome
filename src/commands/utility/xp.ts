@@ -1,5 +1,7 @@
 import { stripIndents } from "common-tags";
 import { ChannelType, EmbedBuilder } from "discord.js";
+import { and, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { levelAtGivenXP } from "../../lib/ranking-handler.js";
 import { styleLog } from "../../lib/utilities.js";
@@ -28,22 +30,22 @@ export class XPCommandHandler extends CommandHandler {
     const { GuildText, GuildVoice, GuildAnnouncement, AnnouncementThread, PublicThread } = ChannelType;
     const channel = this.interaction.options.getChannel('channel', true, [GuildText, GuildVoice, GuildAnnouncement, AnnouncementThread, PublicThread]);
 
-    const guildConfig = await database.guildConfig.upsert({
-      where: { guildID: this.guild.id },
-      create: { guildID: this.guild.id },
-      update: {},
-    });
+    const [guildConfig] = await database
+      .insert(schema.guildConfig)
+      .values({ id: this.guild.id })
+      .onConflictDoUpdate({ target: schema.guildConfig.id, set: { id: this.guild.id } })
+      .returning();
     if (!guildConfig) return styleLog('Error upserting the GUILDCONFIG table!', false, 'xp.js');
 
-    const rankedIgnoredChannelIDs = JSON.parse(guildConfig.rankedIgnoredChannelIDs) as Array<string>;
+    const rankIgnoredChannelIDs = guildConfig.rankIgnoredChannelIDs;
 
-    if (!rankedIgnoredChannelIDs.includes(channel.id)) return this.handleError(`${channel} is already allowed to award XP to users!`);
-    const updatedChannelIDs = rankedIgnoredChannelIDs.filter((channelID) => channelID !== channel.id);
+    if (!rankIgnoredChannelIDs.includes(channel.id)) return this.handleError(`${channel} is already allowed to award XP to users!`);
+    const updatedChannelIDs = rankIgnoredChannelIDs.filter((channelID) => channelID !== channel.id);
 
-    await database.guildConfig.update({
-      where: { guildID: this.guild.id },
-      data: { rankedIgnoredChannelIDs: JSON.stringify(updatedChannelIDs) }
-    });
+    await database
+      .update(schema.guildConfig)
+      .set({ rankIgnoredChannelIDs: updatedChannelIDs })
+      .where(eq(schema.guildConfig.id, this.guild.id));
 
     await this.interaction.editReply({ embeds: [this.simpleEmbed(`${channel} has been **allowed** and will now award XP to users for chatting in it!`)] });
   }
@@ -52,38 +54,37 @@ export class XPCommandHandler extends CommandHandler {
     const { GuildText, GuildVoice, GuildAnnouncement, AnnouncementThread, PublicThread } = ChannelType;
     const channel = this.interaction.options.getChannel('channel', true, [GuildText, GuildVoice, GuildAnnouncement, AnnouncementThread, PublicThread]);
 
-    const guildConfig = await database.guildConfig.upsert({
-      where: { guildID: this.guild.id },
-      create: { guildID: this.guild.id },
-      update: {},
-    });
+    const [guildConfig] = await database
+      .insert(schema.guildConfig)
+      .values({ id: this.guild.id })
+      .onConflictDoUpdate({ target: schema.guildConfig.id, set: { id: this.guild.id } })
+      .returning();
     if (!guildConfig) return styleLog('Error upserting the GUILDCONFIG table!', false, 'xp.js');
 
-    const rankedIgnoredChannelIDs = JSON.parse(guildConfig.rankedIgnoredChannelIDs) as Array<string>;
+    const rankIgnoredChannelIDs = guildConfig.rankIgnoredChannelIDs;
 
-    if (rankedIgnoredChannelIDs.includes(channel.id)) return this.handleError(`${channel} is already denied from awarding XP to users!`);
-    rankedIgnoredChannelIDs.push(channel.id);
+    if (rankIgnoredChannelIDs.includes(channel.id)) return this.handleError(`${channel} is already denied from awarding XP to users!`);
+    rankIgnoredChannelIDs.push(channel.id);
 
-    await database.guildConfig.update({
-      where: { guildID: this.guild.id },
-      data: { rankedIgnoredChannelIDs: JSON.stringify(rankedIgnoredChannelIDs) }
-    });
+    await database
+      .update(schema.guildConfig)
+      .set({ rankIgnoredChannelIDs })
+      .where(eq(schema.guildConfig.id, this.guild.id));
 
     await this.interaction.editReply({ embeds: [this.simpleEmbed(`${channel} has been **denied** and will no longer award XP to users!`)] });
   }
 
   private async viewChannels() {
-    const guildConfig = await database.guildConfig.upsert({
-      where: { guildID: this.guild.id },
-      create: { guildID: this.guild.id },
-      update: {},
-    });
+    const [guildConfig] = await database
+      .insert(schema.guildConfig)
+      .values({ id: this.guild.id })
+      .onConflictDoUpdate({ target: schema.guildConfig.id, set: { id: this.guild.id } })
+      .returning();
     if (!guildConfig) return styleLog('Error upserting the GUILDCONFIG table!', false, 'xp.js');
 
-    const rankedIgnoredChannelIDs = JSON.parse(guildConfig.rankedIgnoredChannelIDs) as Array<string>;
     const rankedIgnoredChannels = [];
 
-    for await (const channelID of rankedIgnoredChannelIDs) {
+    for await (const channelID of guildConfig.rankIgnoredChannelIDs) {
       const rankedChannel = await this.guild.channels.fetch(channelID);
       rankedIgnoredChannels.push(`- ${rankedChannel}`);
     }
@@ -104,9 +105,11 @@ export class XPCommandHandler extends CommandHandler {
     const user = this.interaction.options.getUser('user', true);
     const amount = this.interaction.options.getInteger('amount', true);
 
-    const rank = await database.rank.findUnique({
-      where: { userID_guildID: { guildID: this.guild.id, userID: user.id } }
-    });
+    const rank = await database
+      .select()
+      .from(schema.ranks)
+      .where(and(eq(schema.ranks.userID, user.id), eq(schema.ranks.guildID, this.guild.id)))
+      .get();
 
     const currentXP = rank?.xp ?? 0;
     let updatedXP = 0;
@@ -116,10 +119,13 @@ export class XPCommandHandler extends CommandHandler {
 
     const updatedLevel = levelAtGivenXP(updatedXP);
 
-    await database.rank.update({
-      where: { userID_guildID: { guildID: this.guild.id, userID: user.id } },
-      data: { xp: updatedXP, xpLevel: updatedLevel }
-    });
+    await database
+      .insert(schema.ranks)
+      .values({ guildID: this.guild.id, userID: user.id, xp: updatedXP, xpLevel: updatedLevel })
+      .onConflictDoUpdate({
+        target: [schema.ranks.userID, schema.ranks.guildID],
+        set: { xp: updatedXP, xpLevel: updatedLevel }
+      });
 
     let embedText = '';
     if (option === 'add') embedText = `**${amount} XP** has been added to ${user}, they now have **${updatedXP} XP** in total!`;

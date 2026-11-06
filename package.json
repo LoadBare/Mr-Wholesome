@@ -1,31 +1,30 @@
 {
   "name": "mr-wholesome",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "A general purpose Discord bot created for The Akialytes Discord server.",
   "main": "dist/index.js",
-  "repository": "https://github.com/LoadXBare/Mr-Wholesome",
-  "author": "LoadXBare",
+  "repository": "https://github.com/LoadBare/Mr-Wholesome",
+  "author": "LoadBare",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start-dev": "npx tsx --env-file=.env src/index.ts",
-    "deploy-commands": "npx tsx --env-file=.env src/lib/deploy-commands.ts"
+    "start-dev": "npx tsx watch --env-file=.env.dev src/index.ts",
+    "deploy-commands": "npx tsx --env-file=.env.dev src/lib/deploy-commands.ts"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.82",
-    "@prisma/adapter-mariadb": "^7.0.0",
-    "@prisma/client": "^7.0.0",
-    "chart.js": "^4.5.1",
+    "@napi-rs/canvas": "^0.1.100",
+    "chart.js": "^4.6.1",
     "common-tags": "^1.8.2",
     "croner": "^9.1.0",
     "diff": "^9.0.0",
-    "discord.js": "^14.25.0"
+    "discord.js": "^14.27.0",
+    "drizzle-orm": "^1.0.0-rc.5"
   },
   "devDependencies": {
     "@types/common-tags": "^1.8.4",
-    "@types/node": "^24.10.1",
-    "prisma": "^7.0.0",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@types/node": "^24.19.2",
+    "drizzle-kit": "^1.0.0-rc.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

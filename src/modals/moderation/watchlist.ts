@@ -1,4 +1,5 @@
 import { EmbedBuilder, ModalSubmitInteraction, User } from "discord.js";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { ModalHandler } from "../handler.js";
 
@@ -22,19 +23,21 @@ export class WatchlistModalHandler extends ModalHandler {
       .setTitle(`${this.targetUser.displayName}'s Watchlist`)
       .setDescription(`✅ Successfully added a note to **${this.targetUser.displayName}**`);
 
-    await this.interaction.reply({ embeds: [embed] });
+    await this.interaction.editReply({ embeds: [embed] });
   }
 
   private async addNoteToDatabase(user: User) {
-    const result = await database.notes.create({
-      data: {
+    const [result] = await database
+      .insert(schema.notes)
+      .values({
         authorID: this.interaction.user.id,
         date: Date.now().toString(),
         guildID: this.guild.id,
         noteText: this.note,
         watchedID: user.id
-      }
-    });
+      })
+      .returning()
+      .catch(() => []);
 
     return result;
   }

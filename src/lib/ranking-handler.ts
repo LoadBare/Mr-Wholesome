@@ -1,6 +1,8 @@
 import { stripIndents } from "common-tags";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, MessageFlags, TextChannel } from "discord.js";
+import { and, eq } from "drizzle-orm";
 import { ToggleLevelNotifButtonHandler } from "../buttons/ranking/toggle-level-notifs.js";
+import * as schema from "../db/schema.js";
 import { ChannelIDs, Emotes, baseEmbed, database, xpCooldownCache } from "./config.js";
 import { getRandomIntegerFromSeed, styleLog } from "./utilities.js";
 
@@ -97,26 +99,25 @@ export default class RankingHandler {
     const guildID = this.message.guildId;
     if (!guildID) return false;
 
-    const guildConfig = await database.guildConfig.upsert({
-      where: { guildID },
-      create: { guildID },
-      update: {},
-    });
+    const [guildConfig] = await database
+      .insert(schema.guildConfig)
+      .values({ id: guildID })
+      .onConflictDoUpdate({ target: schema.guildConfig.id, set: { id: guildID } })
+      .returning();
     if (!guildConfig) return styleLog('Error upserting the GUILDCONFIG table!', false, 'ranking-handler.js');
 
-    const rankedIgnoredChannelIDs = JSON.parse(guildConfig.rankedIgnoredChannelIDs) as Array<string>;
-    return !rankedIgnoredChannelIDs.includes(this.message.channelId);
+    return !guildConfig.rankIgnoredChannelIDs.includes(this.message.channelId);
   }
 
   private async fetchMemberRankFromDatabase() {
     const guildID = this.message.guildId!; // Bot cannot receive DMs
     const userID = this.message.author.id;
 
-    const memberRank = await database.rank.upsert({
-      where: { userID_guildID: { guildID, userID } },
-      create: { guildID, userID },
-      update: {},
-    });
+    const [memberRank] = await database
+      .insert(schema.ranks)
+      .values({ guildID, userID })
+      .onConflictDoUpdate({ target: [schema.ranks.userID, schema.ranks.guildID], set: { userID } })
+      .returning();
     if (!memberRank) return styleLog('Error upserting the RANK table!', false, 'ranking-handler.js');
 
     return memberRank;
@@ -126,10 +127,11 @@ export default class RankingHandler {
     const guildID = this.message.guildId!; // Bot cannot receive DMs
     const userID = this.message.author.id;
 
-    const memberRank = await database.rank.update({
-      where: { userID_guildID: { guildID, userID, } },
-      data: { xp, xpLevel },
-    });
+    const [memberRank] = await database
+      .update(schema.ranks)
+      .set({ xp, xpLevel })
+      .where(and(eq(schema.ranks.userID, userID), eq(schema.ranks.guildID, guildID)))
+      .returning();
     if (!memberRank) return styleLog('Error updating the RANK table!', false, 'ranking-handler.js');
 
     return memberRank;

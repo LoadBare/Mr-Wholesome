@@ -1,5 +1,6 @@
 import { stripIndents } from "common-tags";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, heading, italic, Message, ModalSubmitInteraction, User } from "discord.js";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database, EmbedColours } from "../../lib/config.js";
 import { ModalHandler } from "../handler.js";
 
@@ -122,15 +123,17 @@ export class BanModalHandler extends ModalHandler {
 
   // == Database Methods ==
   private async addBanToDatabase(user: User) {
-    const result = await database.ban.create({
-      data: {
+    const result = await database
+      .insert(schema.bans)
+      .values({
         authorID: this.interaction.user.id,
         bannedID: user.id,
         date: Date.now().toString(),
         reason: this.reason,
         guildID: this.guild.id,
-      }
-    }).then(() => true).catch(() => false);
+      })
+      .then(() => true)
+      .catch(() => false);
 
     return result;
   }

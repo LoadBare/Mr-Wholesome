@@ -1,6 +1,8 @@
 import { commaListsAnd } from "common-tags";
 import { Cron } from "croner";
 import { GuildMember, TextChannel } from "discord.js";
+import { eq } from "drizzle-orm";
+import * as schema from "../db/schema.js";
 import { ChannelIDs, RoleIDs, UserIDs, database, guild } from "./config.js";
 import { formatDate, styleLog } from "./utilities.js";
 
@@ -17,7 +19,7 @@ export default class Scheduler {
   private async postBirthdayMessage() {
     const birthdays = await this.fetchTodaysBirthdays();
     const birthdayMembers = birthdays
-      .map((birthday) => guild.members.cache.get(birthday.userID))
+      .map((birthday) => guild.members.cache.get(birthday.id))
       .filter((member) => member instanceof GuildMember);
 
     if (birthdayMembers.length === 0) return;
@@ -52,7 +54,7 @@ export default class Scheduler {
 
     const birthdays = await this.fetchTodaysBirthdays();
     const birthdayMembers = birthdays
-      .map((birthday) => guild.members.cache.get(birthday.userID))
+      .map((birthday) => guild.members.cache.get(birthday.id))
       .filter((member): member is GuildMember => member instanceof GuildMember);
 
     const nonBirthdayMembers = birthdayRole.members
@@ -75,9 +77,10 @@ export default class Scheduler {
   // == DATABASE METHODS ==
   private async fetchTodaysBirthdays() {
     const date = formatDate(new Date().getUTCDate(), new Date().getUTCMonth());
-    const birthdays = await database.birthday.findMany({
-      where: { date }
-    });
+    const birthdays = await database
+      .select()
+      .from(schema.birthdays)
+      .where(eq(schema.birthdays.date, date));
 
     return birthdays;
   }

@@ -1,5 +1,6 @@
 import { stripIndents } from "common-tags";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, heading, italic, Message, ModalSubmitInteraction, User } from "discord.js";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database, EmbedColours } from "../../lib/config.js";
 import { ModalHandler } from "../handler.js";
 
@@ -94,7 +95,12 @@ export class WarningModalHandler extends ModalHandler {
     const warnedID = user.id;
     const reason = this.reason;
 
-    const result = await database.warning.create({ data: { authorID, date, guildID, reason, warnedID } });
-    return result ? true : false;
+    const result = await database
+      .insert(schema.warnings)
+      .values({ authorID, date, guildID, reason, warnedID })
+      .then(() => true)
+      .catch(() => false);
+
+    return result;
   }
 }

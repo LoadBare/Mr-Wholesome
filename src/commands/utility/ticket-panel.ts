@@ -1,5 +1,7 @@
 import { stripIndents } from "common-tags";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CategoryChannel, ChannelType, ComponentType, EmbedBuilder, ForumChannel, MediaChannel, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
+import { and, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database, EmbedColours } from "../../lib/config.js";
 import { TicketPanelModalHandler } from "../../modals/utility/ticket-panel.js";
 import { CommandHandler } from "../command.js";
@@ -64,7 +66,11 @@ export class TicketPanelCommandHandler extends CommandHandler {
     const name = this.interaction.options.getString('name', true);
     const channel = this.interaction.options.getChannel('channel', true, [ChannelType.GuildText]);
 
-    const ticketPanel = await database.ticketPanel.findUnique({ where: { name_guildID: { name: name, guildID: this.guild.id } } });
+    const ticketPanel = await database
+      .select()
+      .from(schema.ticketPanels)
+      .where(and(eq(schema.ticketPanels.name, name), eq(schema.ticketPanels.guildID, this.guild.id)))
+      .get();
 
     if (!ticketPanel) {
       return this.handleError('Error fetching ticket panel from TICKET_PANEL table!', true, 'ticket-panel.js');
@@ -85,14 +91,13 @@ export class TicketPanelCommandHandler extends CommandHandler {
       return this.handleError('Failed to post ticket panel to channel!', true, 'ticket-panel.js');
     }
 
-    const postedPanelMessageIDs = JSON.parse(ticketPanel.postedPanelMessageIDs) as Array<{ channelID: string, messageID: string; }>;
+    const postedPanelMessageIDs = ticketPanel.postedPanelMessageIDs;
     postedPanelMessageIDs.push({ channelID: channel.id, messageID: posted.id });
-    const updatedPanelMessageIDs = JSON.stringify(postedPanelMessageIDs);
 
-    await database.ticketPanel.update({
-      where: { timeCreated: ticketPanel.timeCreated },
-      data: { postedPanelMessageIDs: updatedPanelMessageIDs }
-    });
+    await database
+      .update(schema.ticketPanels)
+      .set({ postedPanelMessageIDs })
+      .where(eq(schema.ticketPanels.timeCreated, ticketPanel.timeCreated));
 
     await this.interaction.reply({ content: `✅ Ticket panel "${name}" posted in ${channel} successfully.` });
   }
@@ -100,7 +105,11 @@ export class TicketPanelCommandHandler extends CommandHandler {
   private async deleteTicketPanel() {
     const name = this.interaction.options.getString('name', true);
 
-    const ticketPanel = await database.ticketPanel.findUnique({ where: { name_guildID: { name: name, guildID: this.guild.id } } });
+    const ticketPanel = await database
+      .select()
+      .from(schema.ticketPanels)
+      .where(and(eq(schema.ticketPanels.name, name), eq(schema.ticketPanels.guildID, this.guild.id)))
+      .get();
 
     if (!ticketPanel) {
       return this.handleError('Error fetching ticket panel from TICKET_PANEL table!', true, 'ticket-panel.js');
@@ -141,12 +150,11 @@ export class TicketPanelCommandHandler extends CommandHandler {
       .setColor(EmbedColours.Neutral);
     if (confirmation.customId === 'no') return this.interaction.editReply({ embeds: [embed], components: [] });
 
-    await database.ticketPanel.delete({
-      where: { timeCreated: ticketPanel.timeCreated }
-    });
+    await database
+      .delete(schema.ticketPanels)
+      .where(eq(schema.ticketPanels.timeCreated, ticketPanel.timeCreated));
 
-    const postedPanelMessageIDs = JSON.parse(ticketPanel.postedPanelMessageIDs) as Array<{ channelID: string, messageID: string; }>;
-    for await (const panel of postedPanelMessageIDs) {
+    for await (const panel of ticketPanel.postedPanelMessageIDs) {
       const channel = await this.guild.channels.fetch(panel.channelID);
       if (!channel || channel instanceof CategoryChannel || channel instanceof ForumChannel || channel instanceof MediaChannel) continue;
 

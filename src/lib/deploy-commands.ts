@@ -1,5 +1,4 @@
 import { ApplicationCommandType, ChannelType, ContextMenuCommandBuilder, PermissionFlagsBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
-import { styleLog } from './utilities.js';
 
 const commands = [
   new SlashCommandBuilder()
@@ -374,10 +373,10 @@ const rest = new REST({ version: '9' }).setToken(process.env.TOKEN ?? '');
 
 if (process.env.ENVIRONMENT === 'DEVELOPMENT') {
   rest.put(Routes.applicationGuildCommands(process.env.BOT_ID ?? '', process.env.GUILD_ID ?? ''), { body: commands })
-    .then(() => styleLog(`Locally registered ${commands.length} application commands!`, true, 'deploy-commands.js'))
-    .catch((e) => styleLog('Error when locally registering application commands!', false, 'deploy-commands.js', e));
+    .then(() => console.log(`Locally registered ${commands.length} application commands!`))
+    .catch((e) => console.log('Error when locally registering application commands!', e));
 } else {
   rest.put(Routes.applicationCommands(process.env.BOT_ID ?? ''), { body: commands })
-    .then(() => styleLog(`Globally registered ${commands.length} application commands!`, true, 'deploy-commands.js'))
-    .catch((e) => styleLog('Error when globally registering application commands!', false, 'deploy-commands.js', e));
+    .then(() => console.log(`Globally registered ${commands.length} application commands!`))
+    .catch((e) => console.log('Error when globally registering application commands!', e));
 }

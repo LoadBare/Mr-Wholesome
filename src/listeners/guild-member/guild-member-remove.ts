@@ -2,6 +2,8 @@ import { stripIndents } from 'common-tags';
 import {
   EmbedBuilder, Events, GuildMember, PartialGuildMember,
 } from 'discord.js';
+import { eq } from 'drizzle-orm';
+import * as schema from '../../db/schema.js';
 import { client } from '../../index.js';
 import { EmbedColours, EventHandler, Images, baseEmbed, database } from '../../lib/config.js';
 import { getRelativeTimeString } from '../../lib/utilities.js';
@@ -47,9 +49,10 @@ class GuildMemberRemoveHandler extends EventHandler {
 
   // == Database Methods ==
   private async fetchWatchlist() {
-    const result = await database.notes.findMany({
-      where: { guildID: this.member.guild.id }
-    });
+    const result = await database
+      .select()
+      .from(schema.notes)
+      .where(eq(schema.notes.guildID, this.member.guild.id));
 
     return result;
   }

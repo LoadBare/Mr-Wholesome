@@ -1,4 +1,6 @@
 import { ChatInputCommandInteraction, PermissionOverwriteOptions, TextChannel, User } from "discord.js";
+import { eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -19,7 +21,11 @@ export class TicketCommandHandler extends CommandHandler {
 
   private async addUser() {
     await this.interaction.deferReply({ ephemeral: true });
-    const ticket = await database.ticket.findUnique({ where: { channelID: this.interaction.channel!.id } });
+    const ticket = await database
+      .select()
+      .from(schema.tickets)
+      .where(eq(schema.tickets.channelID, this.interaction.channel!.id))
+      .get();
 
     if (!ticket) {
       return this.handleError('You are not in a ticket channel.');
@@ -27,7 +33,7 @@ export class TicketCommandHandler extends CommandHandler {
 
     const channel = this.interaction.channel as TextChannel; // All ticket channels are text channels so this is safe
 
-    const addedUsers: string[] = JSON.parse(ticket.addedUsers);
+    const addedUsers = ticket.addedUsers;
 
     if (addedUsers.includes(this.user.id)) {
       return this.handleError('This user is already added to this ticket.');
@@ -35,7 +41,12 @@ export class TicketCommandHandler extends CommandHandler {
 
     addedUsers.push(this.user.id);
 
-    const ticketUpdated = await database.ticket.update({ where: { channelID: channel.id }, data: { addedUsers: JSON.stringify(addedUsers) } }).catch(() => null);
+    const [ticketUpdated] = await database
+      .update(schema.tickets)
+      .set({ addedUsers })
+      .where(eq(schema.tickets.channelID, channel.id))
+      .returning()
+      .catch(() => []);
 
     if (!ticketUpdated) {
       return this.handleError('Failed to update ticket in TICKET table.', true, 'ticket.js');
@@ -54,7 +65,11 @@ export class TicketCommandHandler extends CommandHandler {
 
   private async removeUser() {
     await this.interaction.deferReply({ ephemeral: true });
-    const ticket = await database.ticket.findUnique({ where: { channelID: this.interaction.channel!.id } }).catch(() => null);
+    const ticket = await database
+      .select()
+      .from(schema.tickets)
+      .where(eq(schema.tickets.channelID, this.interaction.channel!.id))
+      .get();
 
     if (!ticket) {
       return this.handleError('You are not in a ticket channel.');
@@ -62,14 +77,19 @@ export class TicketCommandHandler extends CommandHandler {
 
     const channel = this.interaction.channel as TextChannel; // All ticket channels are text channels so this is safe
 
-    const addedUsers: string[] = JSON.parse(ticket.addedUsers);
+    const addedUsers = ticket.addedUsers;
     if (!addedUsers.includes(this.user.id)) {
       return this.handleError('This user is not added to this ticket.');
     }
 
     addedUsers.splice(addedUsers.indexOf(this.user.id), 1);
 
-    const ticketUpdated = await database.ticket.update({ where: { channelID: channel.id }, data: { addedUsers: JSON.stringify(addedUsers) } }).catch(() => null);
+    const [ticketUpdated] = await database
+      .update(schema.tickets)
+      .set({ addedUsers })
+      .where(eq(schema.tickets.channelID, channel.id))
+      .returning()
+      .catch(() => []);
 
     if (!ticketUpdated) {
       return this.handleError('Failed to update ticket in TICKET table.', true, 'ticket.js');

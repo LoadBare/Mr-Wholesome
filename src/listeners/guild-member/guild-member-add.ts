@@ -1,5 +1,7 @@
 import { stripIndents } from 'common-tags';
 import { EmbedBuilder, Events, GuildMember } from 'discord.js';
+import { eq } from 'drizzle-orm';
+import * as schema from '../../db/schema.js';
 import { client } from '../../index.js';
 import { EventHandler, Images, RoleIDs, baseEmbed, database } from '../../lib/config.js';
 import { getRelativeTimeString, sleep, styleLog } from '../../lib/utilities.js';
@@ -59,9 +61,10 @@ class GuildMemberAddHandler extends EventHandler {
 
   // == Database Methods ==
   private async fetchWatchlist() {
-    const result = await database.notes.findMany({
-      where: { guildID: this.member.guild.id }
-    });
+    const result = await database
+      .select()
+      .from(schema.notes)
+      .where(eq(schema.notes.guildID, this.member.guild.id));
 
     return result;
   }

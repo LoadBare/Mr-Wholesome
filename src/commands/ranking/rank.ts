@@ -1,5 +1,7 @@
 import { Canvas, GlobalFonts, SKRSContext2D, loadImage } from "@napi-rs/canvas";
 import { AttachmentBuilder, ChatInputCommandInteraction } from "discord.js";
+import { desc, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { ChannelIDs, database } from "../../lib/config.js";
 import { xpRequiredForLevel } from "../../lib/ranking-handler.js";
 import { CommandHandler } from "../command.js";
@@ -135,11 +137,12 @@ export class RankCommandHandler extends CommandHandler {
   }
 
   private async createUserRankImage() {
-    const memberRank = await database.rank.upsert({
-      where: { userID_guildID: { guildID: this.guild.id, userID: this.interaction.user.id } },
-      create: { guildID: this.guild.id, userID: this.interaction.user.id },
-      update: {},
-    }).catch(() => null);
+    const [memberRank] = await database
+      .insert(schema.ranks)
+      .values({ guildID: this.guild.id, userID: this.interaction.user.id })
+      .onConflictDoUpdate({ target: [schema.ranks.userID, schema.ranks.guildID], set: { userID: this.interaction.user.id } })
+      .returning()
+      .catch(() => []);
 
     if (!memberRank) {
       return this.handleError('Error upserting ranks from RANK table!', true, 'rank.js');
@@ -165,7 +168,12 @@ export class RankCommandHandler extends CommandHandler {
     const guildMembers = this.guild.members.cache;
     const guildMemberIDs = guildMembers.map((member) => member.id);
 
-    const guildRanks = await database.rank.findMany({ where: { guildID }, orderBy: { xp: 'desc' } }).catch(() => null);
+    const guildRanks = await database
+      .select()
+      .from(schema.ranks)
+      .where(eq(schema.ranks.guildID, guildID))
+      .orderBy(desc(schema.ranks.xp))
+      .catch(() => null);
 
     if (!guildRanks) {
       return this.handleError('Error fetching ranks from RANK table!', true, 'rank.js');

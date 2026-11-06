@@ -1,6 +1,6 @@
 import { stripIndents } from 'common-tags';
 import { EmbedBuilder } from 'discord.js';
-import { Birthday } from "../../generated/prisma/client.js";
+import * as schema from '../../db/schema.js';
 import { baseEmbed, ChannelIDs, database, escapeAllFormatting } from '../../lib/config.js';
 import { formatDate } from '../../lib/utilities.js';
 import { CommandHandler } from '../command.js';
@@ -24,11 +24,11 @@ export class BirthdayCommandHandler extends CommandHandler {
 
     if (daysinMonth[month] < day) return this.handleError(`${date} is not a valid date!`);
 
-    const birthday = await database.birthday.upsert({
-      where: { userID: this.interaction.user.id },
-      create: { date, userID: this.interaction.user.id },
-      update: { date },
-    }).catch(() => null);
+    const [birthday] = await database
+      .insert(schema.birthdays)
+      .values({ date, id: this.interaction.user.id })
+      .onConflictDoUpdate({ target: schema.birthdays.id, set: { date } })
+      .returning();
 
     if (!birthday) {
       return this.handleError('Failed to upsert birthday to BIRTHDAY table!', true, 'birthday.js');
@@ -38,7 +38,7 @@ export class BirthdayCommandHandler extends CommandHandler {
     const embed = new EmbedBuilder(baseEmbed)
       .setTitle(`${displayName}'s Birthday`)
       .setDescription(stripIndents
-        `✅ Successfully set your birthday to **${birthday.date}**!`
+        `✅ Successfully set your birthday to **${date}**!`
       );
 
     await this.interaction.editReply({ embeds: [embed] });
@@ -54,7 +54,7 @@ export class BirthdayCommandHandler extends CommandHandler {
 
     const upcomingBirthdaysList: Array<string> = [];
     for await (const birthday of upcomingBirthdays) {
-      const birthdayMember = await this.userInGuild(birthday.userID);
+      const birthdayMember = await this.userInGuild(birthday.id);
 
       if (birthdayMember) {
         upcomingBirthdaysList.push(`- **${escapeAllFormatting(birthdayMember.displayName)}** — ${birthday.date}`);
@@ -82,13 +82,15 @@ export class BirthdayCommandHandler extends CommandHandler {
       currentDate.setUTCDate(day + 1);
     }
 
-    const birthdays = await database.birthday.findMany().catch(() => null);
+    const birthdays = await database
+      .select()
+      .from(schema.birthdays);
 
     if (!birthdays) {
       return this.handleError('Failed to fetch birthdays from BIRTHDAY table!', true, 'birthday.js');
     }
 
-    const upcomingBirthdays: Array<Birthday> = [];
+    const upcomingBirthdays: Array<typeof schema.birthdays.$inferSelect> = [];
     upcomingDays.forEach((day) => {
       birthdays.forEach((birthday) => {
         if (birthday.date === day) upcomingBirthdays.push(birthday);

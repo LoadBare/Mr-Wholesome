@@ -1,4 +1,6 @@
 import { TextChannel, time } from "discord.js";
+import { eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { database } from "../../lib/config.js";
 import { sleep } from "../../lib/utilities.js";
 import { ButtonHandler } from "../button-handler.js";
@@ -6,7 +8,11 @@ import { ButtonHandler } from "../button-handler.js";
 export class deleteTicketButtonHandler extends ButtonHandler {
   async handle() {
     const timeCreated = this.interaction.customId.split(':')[2];
-    const ticket = await database.ticket.findUnique({ where: { timeCreated } });
+    const ticket = await database
+      .select()
+      .from(schema.tickets)
+      .where(eq(schema.tickets.timeCreated, timeCreated))
+      .get();
 
     if (!ticket) {
       return this.handleError('Error fetching ticket from TICKET table.', true, 'delete-ticket.js');
@@ -17,13 +23,17 @@ export class deleteTicketButtonHandler extends ButtonHandler {
     await this.interaction.reply({ content: `Deleting ticket ${time(futureDate, 'R')}...` });
     await sleep(5000);
 
-    const ticketDeleteSuccessful = await database.ticket.delete({ where: { timeCreated } }).catch(() => false).then(() => true);
+    const ticketDeleteSuccessful = await database
+      .delete(schema.tickets)
+      .where(eq(schema.tickets.timeCreated, timeCreated))
+      .then(() => true)
+      .catch(() => false);
 
     if (!ticketDeleteSuccessful) {
       return this.handleError('Error deleting ticket from TICKET table!', true, 'delete-ticket.js');
     }
 
-    const channelDeleteSuccessful = await ticketChannel.delete().catch(() => false).then(() => true);
+    const channelDeleteSuccessful = await ticketChannel.delete().then(() => true).catch(() => false);
 
     if (!channelDeleteSuccessful) {
       return this.handleError('Error deleting ticket channel.', true, 'delete-ticket.js');

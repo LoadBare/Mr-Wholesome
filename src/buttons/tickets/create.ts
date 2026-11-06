@@ -1,4 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionOverwriteOptions, userMention } from "discord.js";
+import { and, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { database } from "../../lib/config.js";
 import { ButtonHandler } from "../button-handler.js";
 
@@ -7,7 +9,11 @@ export class createTicketButtonHandler extends ButtonHandler {
     await this.interaction.deferReply({ ephemeral: true });
     const name = this.interaction.customId.split(':')[2];
     const guildID = this.guild.id;
-    const ticketPanel = await database.ticketPanel.findUnique({ where: { name_guildID: { name, guildID } } });
+    const ticketPanel = await database
+      .select()
+      .from(schema.ticketPanels)
+      .where(and(eq(schema.ticketPanels.name, name), eq(schema.ticketPanels.guildID, guildID)))
+      .get();
 
     if (!ticketPanel) {
       return this.handleError('Error fetching ticket panel from TICKET_PANEL table.', true, 'create-ticket.js');
@@ -55,14 +61,16 @@ export class createTicketButtonHandler extends ButtonHandler {
     const ticketEmbed = JSON.parse(formattedJSON);
     await ticketChannel.send({ embeds: [ticketEmbed], components: [closeTicketActionRow] });
 
-    const ticketCreationSuccessful = await database.ticket.create({
-      data: {
+    const ticketCreationSuccessful = await database
+      .insert(schema.tickets)
+      .values({
         authorID: user.id,
         channelID: ticketChannel.id,
         ticketPanelName: name,
         timeCreated
-      }
-    }).catch(() => false).then(() => true);
+      })
+      .then(() => true)
+      .catch(() => false);
 
     if (!ticketCreationSuccessful) {
       ticketChannel.delete().catch(() => null);

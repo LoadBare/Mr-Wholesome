@@ -1,25 +1,20 @@
 {
-	"compileOnSave": true,
 	"compilerOptions": {
-		"importHelpers": true,
+		"target": "es2024",
+		"module": "nodenext",
+		"types": ["node"],
+		"rootDir": "./src",
+		"outDir": "dist",
+		"sourceMap": true,
 		"incremental": true,
-		"lib": [
-			"ESNext",
-			"DOM"
-		],
 		"newLine": "lf",
-		"noEmitHelpers": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"preserveConstEnums": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
 		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"preserveConstEnums": true,
-		"pretty": true,
-		"resolveJsonModule": true,
-		"useDefineForClassFields": true,
-		"outDir": "dist",
-		"skipLibCheck": true,
-		"types": ["node"],
-		"rootDir": "./src"
-	}
+		"noUnusedParameters": true
+	},
+	"include": ["src"]
 }

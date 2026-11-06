@@ -1,0 +1,24 @@
+services:
+  bot:
+    build:
+      context: .
+      tags:
+        - loadbare/mr-wholesome:latest
+    image: loadbare/mr-wholesome:2.3.0
+    container_name: mr-wholesome-NEW
+    env_file: .env.prod
+    restart: unless-stopped
+    init: true
+    networks:
+      - muddyotter
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ./data:/app/data
+
+networks:
+  muddyotter:
+    external: true

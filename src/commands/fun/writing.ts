@@ -2,6 +2,8 @@ import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import Chart, { ChartItem } from 'chart.js/auto';
 import { stripIndents } from "common-tags";
 import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { and, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, ChannelIDs, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -129,14 +131,14 @@ export class WritingCommandHandler extends CommandHandler {
   }
 
   private async fetchMemberStats() {
-    const memberStats = await database.memberStats.findUnique({
-      where: {
-        userID_guildID: {
-          guildID: this.interaction.guildId!,
-          userID: this.interaction.user.id
-        }
-      }
-    });
+    const memberStats = await database
+      .select()
+      .from(schema.memberStats)
+      .where(and(
+        eq(schema.memberStats.userID, this.interaction.user.id),
+        eq(schema.memberStats.guildID, this.interaction.guildId!)
+      ))
+      .get();
 
     if (memberStats) return memberStats;
 
@@ -145,13 +147,14 @@ export class WritingCommandHandler extends CommandHandler {
   }
 
   private async createMemberStats() {
-    const memberStats = await database.memberStats.create({
-      data: {
+    const [memberStats] = await database
+      .insert(schema.memberStats)
+      .values({
         guildID: this.interaction.guildId!,
         messagesPerHour: JSON.stringify(new Array(24).fill(0)),
         userID: this.interaction.user.id
-      }
-    });
+      })
+      .returning();
 
     return memberStats;
   }

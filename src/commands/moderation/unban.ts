@@ -1,4 +1,6 @@
 import { ChatInputCommandInteraction } from "discord.js";
+import { and, desc, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -28,22 +30,27 @@ export class UnbanCommandHandler extends CommandHandler {
       return this.handleError('Failed to unban user.', true, 'unban.js');
     }
 
-    const latestUserBan = await database.ban.findFirst({
-      where: {
-        bannedID: this.userID,
-        guildID: this.guild.id,
-        unbanned: false
-      }
-    }).catch(() => null);
+    const latestUserBan = await database
+      .select()
+      .from(schema.bans)
+      .where(and(
+        eq(schema.bans.bannedID, this.userID),
+        eq(schema.bans.guildID, this.guild.id),
+        eq(schema.bans.unbanned, false)
+      ))
+      .orderBy(desc(schema.bans.date))
+      .get();
 
     if (!latestUserBan) {
       return this.handleError('Error fetching ban from BAN table!', true, 'unban.js');
     }
 
-    const banUpdateSuccessful = await database.ban.update({
-      where: { date: latestUserBan.date },
-      data: { unbanned: true }
-    }).catch(() => false).then(() => true);
+    const banUpdateSuccessful = await database
+      .update(schema.bans)
+      .set({ unbanned: true })
+      .where(eq(schema.bans.date, latestUserBan.date))
+      .then(() => true)
+      .catch(() => false);
 
     if (!banUpdateSuccessful) {
       return this.handleError('Error updating ban in BAN table!', true, 'unban.js');

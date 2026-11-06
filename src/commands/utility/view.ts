@@ -1,6 +1,7 @@
 import { stripIndents } from "common-tags";
 import { ChatInputCommandInteraction, EmbedBuilder, time, User } from "discord.js";
-import { Ban, Notes, Warning } from "../../generated/prisma/client.js";
+import { and, desc, eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { CommandHandler } from "../command.js";
 
@@ -26,7 +27,11 @@ class BanViewer extends CommandHandler {
   async handle() {
     if (!this.id) return this.viewGuildBans();
 
-    const ban = await database.ban.findUnique({ where: { date: this.id } }).catch(() => null);
+    const ban = await database
+      .select()
+      .from(schema.bans)
+      .where(eq(schema.bans.date, this.id))
+      .get();
     const user = await this.interaction.client.users.fetch(this.id).catch(() => null);
 
     if (ban) this.viewBan(ban);
@@ -34,7 +39,7 @@ class BanViewer extends CommandHandler {
     else this.handleError(`**${this.id}** is not a valid @mention, User ID, or Warning ID!`);
   }
 
-  private async viewBan(ban: Ban) {
+  private async viewBan(ban: typeof schema.bans.$inferSelect) {
     const date = new Date(Number(ban.date));
     const author = await this.interaction.client.users.fetch(ban.authorID).catch(() => null);
     const user = await this.interaction.client.users.fetch(ban.bannedID).catch(() => null);
@@ -62,10 +67,12 @@ class BanViewer extends CommandHandler {
   }
 
   private async viewGuildBans() {
-    const bans = await database.ban.findMany({
-      where: { guildID: this.guild.id },
-      orderBy: { date: 'desc' }
-    }).catch(() => null);
+    const bans = await database
+      .select()
+      .from(schema.bans)
+      .where(eq(schema.bans.guildID, this.guild.id))
+      .orderBy(desc(schema.bans.date))
+      .catch(() => null);
 
     if (!bans) { return this.handleError('Error fetching bans from BAN table!', true, 'view.js'); }
 
@@ -96,10 +103,12 @@ class BanViewer extends CommandHandler {
 
   private async viewUserBans(user: User) {
     const displayName = user.displayName;
-    const userBans = await database.ban.findMany({
-      where: { guildID: this.guild.id, bannedID: user.id },
-      orderBy: { date: 'desc' }
-    }).catch(() => null);
+    const userBans = await database
+      .select()
+      .from(schema.bans)
+      .where(and(eq(schema.bans.guildID, this.guild.id), eq(schema.bans.bannedID, user.id)))
+      .orderBy(desc(schema.bans.date))
+      .catch(() => null);
 
     if (!userBans) return this.handleError('Error fetching bans from BAN table', true, 'view.js');
 
@@ -136,7 +145,11 @@ class WarningViewer extends CommandHandler {
   async handle() {
     if (!this.id) return this.viewGuildWarnings();
 
-    const warning = await database.warning.findUnique({ where: { date: this.id } }).catch(() => null);
+    const warning = await database
+      .select()
+      .from(schema.warnings)
+      .where(eq(schema.warnings.date, this.id))
+      .get();
     const user = await this.interaction.client.users.fetch(this.id).catch(() => null);
 
     if (warning) this.viewWarning(warning);
@@ -144,7 +157,7 @@ class WarningViewer extends CommandHandler {
     else this.handleError(`**${this.id}** is not a valid @mention, User ID, or Warning ID!`);
   }
 
-  private async viewWarning(warning: Warning) {
+  private async viewWarning(warning: typeof schema.warnings.$inferSelect) {
     const date = new Date(Number(warning.date));
     const author = await this.interaction.client.users.fetch(warning.authorID).catch(() => null);
     const warned = await this.interaction.client.users.fetch(warning.warnedID).catch(() => null);
@@ -169,10 +182,12 @@ class WarningViewer extends CommandHandler {
   }
 
   private async viewGuildWarnings() {
-    const warnings = await database.warning.findMany({
-      where: { guildID: this.guild.id },
-      orderBy: { date: 'desc' }
-    }).catch(() => null);
+    const warnings = await database
+      .select()
+      .from(schema.warnings)
+      .where(eq(schema.warnings.guildID, this.guild.id))
+      .orderBy(desc(schema.warnings.date))
+      .catch(() => null);
     if (!warnings) return this.handleError('Error fetching warnings from WARNING table!', true, 'view.js');
 
     const accumulator = new Map<string, { name: string, id: string, amount: number, latest: string; }>();
@@ -210,10 +225,11 @@ class WarningViewer extends CommandHandler {
 
   private async viewUserWarnings(user: User) {
     const displayName = user.displayName;
-    const userWarnings = await database.warning.findMany({
-      where: { guildID: this.guild.id, warnedID: user.id },
-      orderBy: { date: 'desc' }
-    });
+    const userWarnings = await database
+      .select()
+      .from(schema.warnings)
+      .where(and(eq(schema.warnings.guildID, this.guild.id), eq(schema.warnings.warnedID, user.id)))
+      .orderBy(desc(schema.warnings.date));
     if (!userWarnings) return this.handleError('Error fetching warnings from WARNING table', true, 'view.js');
 
     const embedDescription: Array<string> = [];
@@ -247,7 +263,11 @@ class WatchlistViewer extends CommandHandler {
   public async handle() {
     if (!this.id) return this.viewGuildNotes();
 
-    const note = await database.notes.findUnique({ where: { date: this.id } }).catch(() => null);
+    const note = await database
+      .select()
+      .from(schema.notes)
+      .where(eq(schema.notes.date, this.id))
+      .get();
     const user = await this.interaction.client.users.fetch(this.id).catch(() => null);
 
     if (note) this.viewNote(note);
@@ -255,7 +275,7 @@ class WatchlistViewer extends CommandHandler {
     else this.handleError(`**${this.id}** is not a valid @mention, User ID or Note ID`);
   }
 
-  private async viewNote(note: Notes) {
+  private async viewNote(note: typeof schema.notes.$inferSelect) {
     const date = new Date(Number(note.date));
     const author = await this.interaction.client.users.fetch(note.authorID).catch(() => null);
     const watched = await this.interaction.client.users.fetch(note.watchedID).catch(() => null);
@@ -280,10 +300,12 @@ class WatchlistViewer extends CommandHandler {
   }
 
   private async viewGuildNotes() {
-    const notes = await database.notes.findMany({
-      where: { guildID: this.guild.id },
-      orderBy: { date: 'desc' }
-    }).catch(() => null);
+    const notes = await database
+      .select()
+      .from(schema.notes)
+      .where(eq(schema.notes.guildID, this.guild.id))
+      .orderBy(desc(schema.notes.date))
+      .catch(() => null);
     if (!notes) return this.handleError('Error fetching notes from NOTES table', true, 'view.js');
 
     const accumulator = new Map<string, { name: string, id: string, amount: number, latest: string; }>();
@@ -321,10 +343,11 @@ class WatchlistViewer extends CommandHandler {
 
   private async viewUserNotes(user: User) {
     const displayName = user.displayName;
-    const userNotes = await database.notes.findMany({
-      where: { guildID: this.guild.id, watchedID: user.id },
-      orderBy: { date: 'desc' }
-    });
+    const userNotes = await database
+      .select()
+      .from(schema.notes)
+      .where(and(eq(schema.notes.guildID, this.guild.id), eq(schema.notes.watchedID, user.id)))
+      .orderBy(desc(schema.notes.date));
     if (!userNotes) return this.handleError('Error fetching notes from NOTES table', true, 'view.js');
 
     const embedDescription: Array<string> = [];

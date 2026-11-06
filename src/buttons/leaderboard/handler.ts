@@ -1,6 +1,6 @@
 import { ButtonInteraction } from "discord.js";
-import { LeaderboardPayload } from "../../commands/ranking/leaderboard";
-import { ButtonHandler } from "../button-handler";
+import { LeaderboardPayload } from "../../commands/ranking/leaderboard.js";
+import { ButtonHandler } from "../button-handler.js";
 
 export class leaderboardButtonsHandler extends ButtonHandler {
     constructor(interaction: ButtonInteraction) {

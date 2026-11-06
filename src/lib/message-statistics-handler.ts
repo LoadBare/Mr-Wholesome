@@ -1,4 +1,6 @@
 import { Message } from "discord.js";
+import { and, eq } from "drizzle-orm";
+import * as schema from "../db/schema.js";
 import { database } from "./config.js";
 import { styleLog } from "./utilities.js";
 
@@ -33,14 +35,14 @@ export default class MessageStatisticsHandler {
   }
 
   private async fetchMemberStats() {
-    const memberStats = await database.memberStats.findUnique({
-      where: {
-        userID_guildID: {
-          guildID: this.message.guildId!,
-          userID: this.message.author.id
-        }
-      }
-    });
+    const memberStats = await database
+      .select()
+      .from(schema.memberStats)
+      .where(and(
+        eq(schema.memberStats.userID, this.message.author.id),
+        eq(schema.memberStats.guildID, this.message.guildId!)
+      ))
+      .get();
 
     if (memberStats) return memberStats;
 
@@ -49,30 +51,27 @@ export default class MessageStatisticsHandler {
   }
 
   private async createMemberStats() {
-    const memberStats = await database.memberStats.create({
-      data: {
+    const [memberStats] = await database
+      .insert(schema.memberStats)
+      .values({
         guildID: this.message.guildId!,
         messagesPerHour: JSON.stringify(new Array(24).fill(0)),
         userID: this.message.author.id
-      }
-    });
+      })
+      .returning();
 
     return memberStats;
   }
 
   private async updateMemberStats(messageCount: number, messagesPerHour: string) {
-    const updatedMemberStats = await database.memberStats.update({
-      where: {
-        userID_guildID: {
-          guildID: this.message.guildId!,
-          userID: this.message.author.id
-        }
-      },
-      data: {
-        messageCount,
-        messagesPerHour
-      }
-    });
+    const [updatedMemberStats] = await database
+      .update(schema.memberStats)
+      .set({ messageCount, messagesPerHour })
+      .where(and(
+        eq(schema.memberStats.userID, this.message.author.id),
+        eq(schema.memberStats.guildID, this.message.guildId!)
+      ))
+      .returning();
 
     return updatedMemberStats;
   }

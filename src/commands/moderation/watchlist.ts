@@ -1,4 +1,6 @@
 import { ActionRowBuilder, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
+import { eq } from "drizzle-orm";
+import * as schema from "../../db/schema.js";
 import { baseEmbed, database } from "../../lib/config.js";
 import { WatchlistModalHandler } from "../../modals/moderation/watchlist.js";
 import { CommandHandler } from "../command.js";
@@ -57,11 +59,11 @@ export class WatchlistCommandHandler extends CommandHandler {
   }
 
   private async deleteNoteFromDatabase(noteID: string) {
-    const result = await database.notes.delete({
-      where: {
-        date: noteID
-      }
-    }).catch(() => null);
+    const [result] = await database
+      .delete(schema.notes)
+      .where(eq(schema.notes.date, noteID))
+      .returning()
+      .catch(() => []);
 
     return result;
   }
