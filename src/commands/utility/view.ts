@@ -1,5 +1,5 @@
 import { stripIndents } from "common-tags";
-import { ChatInputCommandInteraction, EmbedBuilder, time, User } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Guild, time, User, userMention, } from "discord.js";
 import { and, desc, eq } from "drizzle-orm";
 import * as schema from "../../db/schema.js";
 import { baseEmbed, database } from "../../lib/config.js";
@@ -67,38 +67,8 @@ class BanViewer extends CommandHandler {
   }
 
   private async viewGuildBans() {
-    const bans = await database
-      .select()
-      .from(schema.bans)
-      .where(eq(schema.bans.guildID, this.guild.id))
-      .orderBy(desc(schema.bans.date))
-      .catch(() => null);
-
-    if (!bans) { return this.handleError('Error fetching bans from BAN table!', true, 'view.js'); }
-
-    const embedDescription: Array<string> = [];
-    for await (const ban of bans) {
-      const bannedUser = await this.interaction.client.users.fetch(ban.bannedID);
-      const displayName = bannedUser.displayName;
-      const date = new Date(Number(ban.date));
-      const active = ban.unbanned ? '🟥' : '🟩';
-
-      embedDescription.push(stripIndents
-        `${active} **${displayName}** — ${time(date, 'R')}
-        ├ **User ID:** ${ban.bannedID}
-        └ **Ban ID:** ${ban.date}`
-      );
-    }
-
-    if (bans.length === 0) embedDescription.push(`There are no bans in ${this.guild.name}`);
-
-    const embed = new EmbedBuilder(baseEmbed)
-      .setTitle(`Bans in ${this.guild.name}`)
-      .setThumbnail(this.guild.iconURL())
-      .setDescription(embedDescription.join('\n\n'))
-      .setFooter({ text: '🟩 = active, 🟥 = unbanned' });
-
-    await this.interaction.editReply({ embeds: [embed] });
+    const payload = await new GuildBansPayload(this.interaction, 1).create();
+    await this.interaction.editReply(payload);
   }
 
   private async viewUserBans(user: User) {
@@ -131,6 +101,89 @@ class BanViewer extends CommandHandler {
       .setFooter({ text: '🟩 = active, 🟥 = unbanned' });
 
     await this.interaction.editReply({ embeds: [embed] });
+  }
+}
+
+export class GuildBansPayload {
+  static readonly bansPerPage = 10;
+  private static readonly maxReasonLength = 60;
+
+  private interaction: ChatInputCommandInteraction | ButtonInteraction;
+  private guild: Guild;
+  private page: number;
+
+  constructor(interaction: ChatInputCommandInteraction | ButtonInteraction, page: number) {
+    this.interaction = interaction;
+    this.guild = interaction.guild!;
+    this.page = page;
+  }
+
+  async create() {
+    const bans = await database
+      .select()
+      .from(schema.bans)
+      .where(eq(schema.bans.guildID, this.guild.id))
+      .orderBy(desc(schema.bans.date));
+
+    const pageCount = Math.max(1, Math.ceil(bans.length / GuildBansPayload.bansPerPage));
+    this.page = Math.min(Math.max(1, this.page || 1), pageCount);
+
+    const pageStart = (this.page - 1) * GuildBansPayload.bansPerPage;
+    const pageBans = bans.slice(pageStart, pageStart + GuildBansPayload.bansPerPage);
+    const activeCount = bans.filter((ban) => !ban.unbanned).length;
+
+    const bannedUsers = await Promise.all(pageBans.map((ban) => this.interaction.client.users.fetch(ban.bannedID).catch(() => null)));
+
+    const lines = pageBans.map((ban, index) => {
+      const displayName = bannedUsers[index]?.displayName ?? 'Unknown User';
+      const flatReason = ban.reason.replace(/\s+/g, ' ');
+      const reason = flatReason.length > GuildBansPayload.maxReasonLength
+        ? `${flatReason.slice(0, GuildBansPayload.maxReasonLength - 1)}…`
+        : flatReason;
+
+      return stripIndents
+        `${ban.unbanned ? '🟥' : '🟩'} **${displayName}** · ${time(new Date(Number(ban.date)), 'R')} · by ${userMention(ban.authorID)}
+        -# \`${ban.date}\` — ${reason}`;
+    });
+
+    const embed = new EmbedBuilder(baseEmbed)
+      .setTitle(`Bans in ${this.guild.name}`)
+      .setThumbnail(this.guild.iconURL())
+      .setDescription(lines.length ? lines.join('\n\n') : `There are no bans in ${this.guild.name}`)
+      .setFooter({ text: `🟩 ${activeCount} active · 🟥 ${bans.length - activeCount} unbanned · ${bans.length} total` });
+
+    return { embeds: [embed], components: [this.pageButtons(pageCount)] };
+  }
+
+  private pageButtons(pageCount: number) {
+    return new ActionRowBuilder<ButtonBuilder>()
+      .setComponents(
+        new ButtonBuilder()
+          .setCustomId('bans:1:first')
+          .setLabel('<<')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(this.page === 1),
+        new ButtonBuilder()
+          .setCustomId(`bans:${this.page - 1}`)
+          .setLabel('<')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(this.page === 1),
+        new ButtonBuilder()
+          .setCustomId('bans:page')
+          .setLabel(`Page ${this.page} / ${pageCount}`)
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId(`bans:${this.page + 1}`)
+          .setLabel('>')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(this.page === pageCount),
+        new ButtonBuilder()
+          .setCustomId(`bans:${pageCount}:last`)
+          .setLabel('>>')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(this.page === pageCount)
+      );
   }
 }
 
